@@ -2,6 +2,8 @@
 
 This project aims to predict food delivery times. It includes a Next.js route explorer with illustrative ETAs, a FastAPI health endpoint, and a Python workflow that cleans and profiles the delivery dataset. You can run the demo without a CSV or a trained model.
 
+[Project overview and architecture](docs/architecture.md)
+
 ## Run locally
 
 Use Node.js 20 or newer with npm, and Python 3.11 or newer. Run each block from the repository root in a separate PowerShell terminal.
@@ -77,7 +79,17 @@ From `apps/backend`, run one of these commands after installing the backend depe
 
 The command writes `ml/data/processed/dataset.parquet` and `ml/data/manifests/dataset.json`. The report includes raw profiles, row reconciliation, quality flags, remaining nulls, and the final schema. Git ignores the raw CSV and generated outputs.
 
-`distance_km` is a straight-line estimate. Missing or invalid coordinate pairs and distances above 100 km produce a null distance. The dataset retains order timestamps for a future chronological split. Training will use the configured order-time features and fit any imputation, encoding, or scaling on training rows.
+`distance_km` is a straight-line estimate. Missing or invalid coordinate pairs and distances above 100 km produce a null distance. The dataset retains order timestamps for the chronological split.
+
+## Run the median baseline
+
+From `apps/backend/`, run this after creating the cleaned Parquet.
+
+```powershell
+.\.venv\Scripts\python.exe -m ml.scripts.train
+```
+
+The command reports timestamp exclusions, chronological split sizes and date ranges, the training median, and validation mean absolute error. The newest partition is held for final evaluation. [Baseline training notebook](apps/backend/ml/notebooks/02_baseline_training.ipynb)
 
 ## Repository layout
 
@@ -85,7 +97,7 @@ The command writes `ml/data/processed/dataset.parquet` and `ml/data/manifests/da
 | --- | --- |
 | [`apps/web/`](apps/web/) | Next.js frontend, route explorer, theme toggle, and onboarding |
 | [`apps/backend/app/`](apps/backend/app/) | FastAPI application, configuration, and health endpoint |
-| [`apps/backend/ml/`](apps/backend/ml/) | Dataset configuration, cleaning, and quality reporting |
-| [`apps/backend/tests/`](apps/backend/tests/) | API and ingestion tests |
-| [`docs/architecture.md`](docs/architecture.md) | Service and ML package boundaries |
+| [`apps/backend/ml/`](apps/backend/ml/) | Dataset configuration, cleaning, notebooks, and baseline training |
+| [`apps/backend/tests/`](apps/backend/tests/) | API, ingestion, and baseline tests |
+| [`docs/architecture.md`](docs/architecture.md) | Project overview, architecture, and status |
 | [`infra/README.md`](infra/README.md) | Container setup |
