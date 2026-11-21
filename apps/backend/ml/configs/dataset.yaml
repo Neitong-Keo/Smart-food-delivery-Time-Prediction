@@ -1,4 +1,4 @@
-# Dataset and Artifact Path Configuration (Phase 1 Scaffold)
+# Dataset and artifact paths for the delivery ETA workflow.
 #
 # Path resolution rule:
 #   All relative paths in this file are resolved against a single base directory:
@@ -16,13 +16,50 @@ paths:
   metrics_artifact: "artifacts/v1/metrics.json"
   model_manifest: "artifacts/v1/manifest.json"
 
-# Target and feature mappings remain intentionally pending until
-# `apps/backend/ml/data/raw/dataset.csv` is placed and its CSV headers are verified.
 schema:
-  status: "pending_header_verification"
-  target_column: null
-  numeric_features: []
-  categorical_features: []
-  datetime_features: []
-  drop_columns: []
+  target_column: delivery_time_minutes
+  raw_target_column: "Time_taken (min)"
+  required_columns:
+    - ID
+    - Delivery_person_ID
+    - Delivery_person_Age
+    - Delivery_person_Ratings
+    - Restaurant_latitude
+    - Restaurant_longitude
+    - Delivery_location_latitude
+    - Delivery_location_longitude
+    - Order_Date
+    - Time_Orderd
+    - Weather_conditions
+    - Road_traffic_density
+    - Vehicle_condition
+    - Type_of_order
+    - Type_of_vehicle
+    - multiple_deliveries
+    - Festival
+    - City
+    - "Time_taken (min)"
+  # Order metadata and derived values available at placement.
+  # Rider, vehicle, batching, weather and traffic snapshot timing is unverified.
+  feature_allowlist:
+    - Type_of_order
+    - Festival
+    - City
+    - order_hour
+    - order_day_of_week
+    - distance_km
+
+quality:
+  missing_markers: ["", "nan"]
+  long_delivery_review_minutes: 60
+  # Local deliveries in the inspected CSV are at most 21 km after a large gap.
+  # Treat >100 km as implausible for this use case and leave the distance null.
+  max_straight_line_distance_km: 100
+  numeric_fields:
+    # Broad age sanity check. Under-18 values are retained and counted for review.
+    Delivery_person_Age: {min: 1, max: 120, integer: true}
+    # Project policy for the five-star rating scale.
+    Delivery_person_Ratings: {min: 1, max: 5, integer: false}
+    Vehicle_condition: {min: 0, max: 3, integer: true}
+    multiple_deliveries: {min: 0, max: 3, integer: true}
 
