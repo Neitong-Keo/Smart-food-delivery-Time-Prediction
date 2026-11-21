@@ -1,0 +1,28 @@
+# Dataset and Artifact Path Configuration (Phase 1 Scaffold)
+#
+# Path resolution rule:
+#   All relative paths in this file are resolved against a single base directory:
+#   `apps/backend/ml/` (represented by `ml.ML_BASE_DIR`, or `..` relative to
+#   this `ml/configs/` directory).
+
+base_dir: ".."
+
+paths:
+  raw_csv: "data/raw/dataset.csv"
+  processed_parquet: "data/processed/dataset.parquet"
+  dataset_manifest: "data/manifests/dataset.json"
+  artifacts_dir: "artifacts/v1"
+  model_artifact: "artifacts/v1/model.joblib"
+  metrics_artifact: "artifacts/v1/metrics.json"
+  model_manifest: "artifacts/v1/manifest.json"
+
+# Target and feature mappings remain intentionally pending until
+# `apps/backend/ml/data/raw/dataset.csv` is placed and its CSV headers are verified.
+schema:
+  status: "pending_header_verification"
+  target_column: null
+  numeric_features: []
+  categorical_features: []
+  datetime_features: []
+  drop_columns: []
+

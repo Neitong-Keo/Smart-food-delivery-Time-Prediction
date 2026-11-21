@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+.env.*
+
+# Exclude datasets, generated manifests, and model artifacts from Phase 1 image builds
+ml/data/raw/*
+ml/data/processed/*
+ml/data/manifests/*
+ml/artifacts/*
+ml/experiments/*
+ml/notebooks/*
+tests/
+
