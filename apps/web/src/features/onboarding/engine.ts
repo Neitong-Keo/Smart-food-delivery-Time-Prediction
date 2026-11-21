@@ -19,31 +19,31 @@ export const ONBOARDING_STEPS: TourStep[] = [
     description:
       "Smart Food Delivery Time Prediction estimates total door-to-door delivery duration in minutes using route distance, traffic, and weather conditions.",
     targetId: "hero-section",
-    highlightSummary: "Navigate to /predict for the ETA calculator or /model for evaluation insights.",
+    highlightSummary: "Open Estimate for live prediction availability or Model Insights for evaluation results.",
   },
   {
     id: "api-health",
-    title: "Live FastAPI Health Status",
+    title: "Check the API connection",
     description:
-      "The API status indicator calls GET /api/health via NEXT_PUBLIC_API_BASE_URL (defaulting to http://localhost:8600) and displays checking, online, or offline states.",
+      "The health indicator shows whether the app can reach the delivery API.",
     targetId: "api-status-card",
-    highlightSummary: "Confirms backend connectivity before submitting prediction requests.",
+    highlightSummary: "If the API is offline, select Recheck API to try the connection again.",
   },
   {
     id: "route-explorer",
-    title: "Sample Route & Illustrative Estimate",
+    title: "Try the sample route",
     description:
-      "Use the sample routes from roadKit.ts to preview how distance, traffic congestion, and weather affect delivery time. All sample outputs are labeled Illustrative estimate.",
+      "Compare the usual route with three alternatives. Each alternative changes one delivery condition.",
     targetId: "route-preview-card",
-    highlightSummary: "Interactive route heuristics let you test scenarios even before live ML inference is wired.",
+    highlightSummary: "Change the controls in the sample route explorer to try your own combinations.",
   },
   {
     id: "theme-and-keys",
-    title: "Theme Toggle & Calculator Workspace",
+    title: "Choose your theme",
     description:
-      "Switch between Deep Navy dark mode and light mode anytime from the header. Press Escape or Close to exit the tour and return focus to the tour button.",
+      "Use the theme button in the header to switch between light and dark mode.",
     targetId: "theme-toggle-control",
-    highlightSummary: "Keyboard shortcuts: ArrowLeft, ArrowRight, and Escape.",
+    highlightSummary: "Select Finish to return to the landing page and try the sample route.",
   },
 ];
 

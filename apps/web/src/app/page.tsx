@@ -24,6 +24,7 @@ export default function HomePage() {
     DEFAULT_ROUTE_SCENARIO;
 
   const estimate = estimateIllustrativeEta(distanceKm, traffic, weather);
+  const distanceScale = distanceKm / selectedScenario.distanceKm;
 
   const applyScenario = (scenarioId: string) => {
     const match = SAMPLE_ROUTE_SCENARIOS.find((item) => item.id === scenarioId);
@@ -40,13 +41,11 @@ export default function HomePage() {
   return (
     <>
       <section id="hero-section" className="hero">
-        <span className="badge">Smart Delivery ETA Platform</span>
         <h1 className="hero-title">
-          Delivery ETA Intelligence for Real-World Conditions
+          How long will delivery take?
         </h1>
         <p className="hero-description">
-          This app predicts total food delivery time in minutes from trip distance, traffic
-          congestion, and weather conditions.
+          Estimate food delivery time in minutes based on route distance, traffic, and weather.
         </p>
 
         <div className="hero-actions">
@@ -57,38 +56,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="grid-two">
-        <ApiStatus />
-
-        <section className="card" aria-label="Workspace navigation">
-          <p className="eyebrow">Explore Platform</p>
-          <h2 className="card-title">Calculator &amp; Model Evaluation</h2>
-          <p className="muted-text">
-            Enter delivery conditions on the ETA calculator or inspect verified model metrics as
-            they become available from the FastAPI service.
-          </p>
-          <div className="card-actions">
-            <Link href="/predict" className="button button-primary">
-              Open ETA calculator
-            </Link>
-            <Link href="/model" className="button button-secondary">
-              View model insights
-            </Link>
-          </div>
-        </section>
-      </div>
-
       <section
         id="route-preview-card"
         className="card route-card"
-        aria-label="Illustrative route preview"
+        aria-labelledby="route-preview-title"
       >
         <div className="route-header">
           <div>
-            <p className="eyebrow">Sample Route Explorer</p>
-            <h2 className="card-title">Distance, Traffic &amp; Weather Preview</h2>
+            <h2 id="route-preview-title" className="card-title">Sample route explorer</h2>
+            <p className="muted-text">Change the route conditions to see how the estimate responds.</p>
           </div>
-          <span className="badge badge-warning">Illustrative estimate</span>
         </div>
 
         <div className="scenario-tabs" role="group" aria-label="Sample route presets">
@@ -99,6 +76,7 @@ export default function HomePage() {
               className={`pill-button ${
                 scenario.id === selectedScenario.id ? "pill-button-active" : ""
               }`}
+              aria-pressed={scenario.id === selectedScenario.id}
               onClick={() => applyScenario(scenario.id)}
             >
               {scenario.name}
@@ -110,7 +88,7 @@ export default function HomePage() {
           <div className="controls-column">
             <div className="field-group">
               <label htmlFor="distance-slider" className="field-label">
-                Route distance: <strong>{distanceKm.toFixed(1)} km</strong>
+                Route distance <strong aria-hidden="true">{distanceKm.toFixed(1)} km</strong>
               </label>
               <input
                 id="distance-slider"
@@ -119,6 +97,7 @@ export default function HomePage() {
                 max={18}
                 step={0.1}
                 value={distanceKm}
+                aria-valuetext={`${distanceKm.toFixed(1)} kilometers`}
                 onChange={(event) => setDistanceKm(Number(event.target.value))}
               />
             </div>
@@ -150,26 +129,16 @@ export default function HomePage() {
                 onChange={(event) => setWeather(event.target.value as WeatherCondition)}
               >
                 <option value="clear">Clear skies</option>
-                <option value="rain">Rain (+6 min)</option>
-                <option value="storm">Heavy storm (+13 min)</option>
+                <option value="rain">Rain</option>
+                <option value="storm">Heavy storm</option>
               </select>
             </div>
-
-            <ol className="waypoint-list" aria-label="Sample route waypoints">
-              {selectedScenario.waypoints.map((waypoint) => (
-                <li key={waypoint.id} className="waypoint-item">
-                  <span className="waypoint-role">{waypoint.role}</span>
-                  <span>{waypoint.label}</span>
-                  <span className="waypoint-km">{waypoint.distanceFromStartKm.toFixed(1)} km</span>
-                </li>
-              ))}
-            </ol>
           </div>
 
-          <div className="eta-panel" aria-live="polite">
+          <div className="eta-panel">
             <p className="eyebrow">Illustrative estimate</p>
-            <p className="eta-value">{estimate.label}</p>
-            <p className="muted-text">{estimate.disclaimer}</p>
+            <p className="eta-value" aria-live="polite">{estimate.totalMinutes} minutes</p>
+            <p className="muted-text">Includes sample kitchen prep and travel time.</p>
 
             <dl className="breakdown-list">
               <div className="breakdown-row">
@@ -190,8 +159,22 @@ export default function HomePage() {
               </div>
             </dl>
           </div>
+
+          <ol className="waypoint-list" aria-label="Sample route waypoints">
+            {selectedScenario.waypoints.map((waypoint) => (
+              <li key={waypoint.id} className="waypoint-item">
+                <span className="waypoint-role">{waypoint.role}</span>
+                <span>{waypoint.label}</span>
+                <span className="waypoint-km">
+                  {(waypoint.distanceFromStartKm * distanceScale).toFixed(1)} km
+                </span>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
+
+      <ApiStatus />
     </>
   );
 }

@@ -10,7 +10,8 @@
   --text: #0f1f3d;
   --text-muted: #475569;
   --border: #cbd5e1;
-  --accent: var(--sky);
+  --accent: var(--sky-strong);
+  --accent-hover: #075985;
   --accent-contrast: #ffffff;
   --success: #15803d;
   --success-bg: #dcfce7;
@@ -21,6 +22,7 @@
   --info: #0c4a6e;
   --info-bg: #e0f2fe;
   --shadow: 0 8px 24px rgba(15, 31, 61, 0.08);
+  color-scheme: light;
 }
 
 :root[data-theme="dark"] {
@@ -36,6 +38,7 @@
   --text-muted: #cbd5e1;
   --border: #28416b;
   --accent: var(--sky);
+  --accent-hover: var(--sky-strong);
   --accent-contrast: #081122;
   --success: #4ade80;
   --success-bg: rgba(34, 197, 94, 0.16);
@@ -46,6 +49,7 @@
   --info: #bae6fd;
   --info-bg: rgba(56, 189, 248, 0.14);
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+  color-scheme: dark;
 }
 
 * {
@@ -146,12 +150,6 @@ select:focus-visible,
   font-size: 1rem;
 }
 
-.brand-subtitle {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-}
-
 .header-controls {
   display: flex;
   flex-wrap: wrap;
@@ -208,15 +206,9 @@ select:focus-visible,
   box-shadow: var(--shadow);
 }
 
-.hero .badge {
-  background: rgba(56, 189, 248, 0.18);
-  color: #bae6fd;
-  border: 1px solid rgba(56, 189, 248, 0.35);
-}
-
 .hero-title {
-  margin: 0.85rem 0 0.65rem;
-  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.85rem, 4vw, 3rem);
   line-height: 1.2;
 }
 
@@ -234,13 +226,13 @@ select:focus-visible,
   margin-top: 1.35rem;
 }
 
-.hero .button-secondary {
+.hero-actions > .button-secondary {
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
   border-color: rgba(186, 230, 253, 0.45);
 }
 
-.hero .button-secondary:hover {
+.hero-actions > .button-secondary:hover {
   background: rgba(255, 255, 255, 0.18);
 }
 
@@ -253,15 +245,9 @@ select:focus-visible,
 }
 
 .page-title {
-  margin: 0.35rem 0 0.45rem;
+  margin: 0;
   font-size: clamp(1.45rem, 2.5vw, 2rem);
   line-height: 1.2;
-}
-
-.grid-two {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-  gap: 1.25rem;
 }
 
 .card {
@@ -297,27 +283,6 @@ select:focus-visible,
   font-size: 0.95rem;
 }
 
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.65rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  background: var(--surface-subtle);
-  color: var(--text);
-}
-
-.badge-warning {
-  background: var(--warning-bg);
-  color: var(--warning);
-}
-
-.badge-info {
-  background: var(--info-bg);
-  color: var(--info);
-}
-
 .callout {
   padding: 1.1rem 1.25rem;
   border-radius: 0.85rem;
@@ -333,15 +298,9 @@ select:focus-visible,
   color: var(--info);
 }
 
-.callout-error {
-  background: var(--danger-bg);
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
 .callout-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
 }
 
@@ -414,26 +373,6 @@ select:focus-visible,
   word-break: break-all;
 }
 
-.feature-list {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  color: var(--text-muted);
-}
-
-.feature-list strong {
-  color: var(--text);
-}
-
-.card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1.15rem;
-}
-
 .scenario-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -460,19 +399,15 @@ select:focus-visible,
 
 .route-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas: "controls estimate" "waypoints estimate";
+  gap: 1rem 1.5rem;
 }
 
 .controls-column {
+  grid-area: controls;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 1rem;
 }
 
@@ -488,13 +423,6 @@ select:focus-visible,
   color: var(--text);
 }
 
-.field-hint {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-}
-
-.text-input,
 .select-input {
   width: 100%;
   padding: 0.6rem 0.75rem;
@@ -505,28 +433,12 @@ select:focus-visible,
   font-size: 0.95rem;
 }
 
-.text-input[aria-invalid="true"],
-.select-input[aria-invalid="true"] {
-  border-color: var(--danger);
-  background: var(--danger-bg);
+input[type="range"] {
+  margin-inline: 0;
+  accent-color: var(--accent);
 }
-
-.field-error {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--danger);
-}
-
-.form-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-top: 1.25rem;
-}
-
 .waypoint-list {
+  grid-area: waypoints;
   list-style: none;
   margin: 0.25rem 0 0;
   padding: 0;
@@ -558,8 +470,8 @@ select:focus-visible,
   font-variant-numeric: tabular-nums;
 }
 
-.eta-panel,
-.result-card {
+.eta-panel {
+  align-self: start;
   padding: 1.25rem;
   border-radius: 0.85rem;
   background: var(--surface-subtle);
@@ -567,6 +479,10 @@ select:focus-visible,
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.route-grid > .eta-panel {
+  grid-area: estimate;
 }
 
 .eta-value {
@@ -595,61 +511,7 @@ select:focus-visible,
 .breakdown-row dd {
   margin: 0;
   font-weight: 600;
-}
-
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  gap: 1rem;
-}
-
-.metric-card {
-  padding: 1.15rem;
-  border-radius: 0.85rem;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border);
-}
-
-.metric-value {
-  margin: 0.35rem 0;
-  font-size: 1.75rem;
-  font-weight: 800;
-}
-
-.importance-list {
-  list-style: none;
-  margin: 1rem 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.importance-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.importance-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.92rem;
-  font-weight: 600;
-}
-
-.importance-track {
-  width: 100%;
-  height: 0.55rem;
-  border-radius: 999px;
-  background: var(--surface-subtle);
-  overflow: hidden;
-}
-
-.importance-bar {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--accent);
+  white-space: nowrap;
 }
 
 .button {
@@ -666,7 +528,8 @@ select:focus-visible,
   cursor: pointer;
 }
 
-.button:disabled {
+.button:disabled,
+.button[aria-disabled="true"] {
   opacity: 0.58;
   cursor: not-allowed;
 }
@@ -677,8 +540,7 @@ select:focus-visible,
 }
 
 .button-primary:hover:not(:disabled) {
-  background: var(--sky-strong);
-  color: #ffffff;
+  background: var(--accent-hover);
 }
 
 .button-secondary {
@@ -687,7 +549,7 @@ select:focus-visible,
   border-color: var(--border);
 }
 
-.button-secondary:hover:not(:disabled) {
+.button-secondary:hover:not(:disabled, [aria-disabled="true"]) {
   background: var(--surface-subtle);
 }
 
@@ -701,31 +563,13 @@ select:focus-visible,
   background: var(--surface-subtle);
 }
 
-.icon-button {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  border-radius: 0.45rem;
-  width: 2rem;
-  height: 2rem;
-  font-size: 1.15rem;
-  cursor: pointer;
-}
-
-.tour-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(8, 17, 34, 0.65);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 50;
+body:has(.tour-dialog[open]) {
+  overflow: hidden;
 }
 
 .tour-dialog {
-  width: min(520px, 100%);
-  max-height: calc(100vh - 2rem);
+  width: min(520px, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
   overflow-y: auto;
   background: var(--surface);
   color: var(--text);
@@ -735,16 +579,21 @@ select:focus-visible,
   box-shadow: var(--shadow);
 }
 
+.tour-dialog::backdrop {
+  background: rgba(8, 17, 34, 0.65);
+}
+
 .tour-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .tour-title {
   margin: 0 0 0.5rem;
   font-size: 1.25rem;
+}
+
+.tour-title:focus-visible {
+  outline: none;
 }
 
 .tour-description {
@@ -760,23 +609,39 @@ select:focus-visible,
   font-size: 0.9rem;
 }
 
+.tour-estimates {
+  gap: 0.25rem;
+  margin: 0 0 0.75rem;
+  padding: 0.75rem;
+}
+
 .tour-dots {
   display: flex;
-  gap: 0.45rem;
-  margin-bottom: 1.15rem;
 }
 
 .tour-dot {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.4rem;
   border: none;
-  background: var(--border);
+  background: transparent;
   cursor: pointer;
   padding: 0;
 }
 
-.tour-dot-active {
+.tour-dot::before {
+  content: "";
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.tour-dot[aria-current="step"]::before {
+  width: 0.8rem;
+  height: 0.8rem;
   background: var(--accent);
 }
 
@@ -786,11 +651,6 @@ select:focus-visible,
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-}
-
-.tour-keys-hint {
-  font-size: 0.8rem;
-  color: var(--text-muted);
 }
 
 .tour-actions {
@@ -816,8 +676,16 @@ select:focus-visible,
     justify-content: space-between;
   }
 
-  .hero-actions > *,
-  .form-actions > * {
+  .hero-actions > * {
     width: 100%;
+  }
+
+  .route-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "controls" "estimate" "waypoints";
+  }
+
+  .tour-dialog {
+    padding: 1rem;
   }
 }

@@ -6,27 +6,12 @@ type Theme = "light" | "dark";
 
 const STORAGE_KEY = "smart-delivery-theme";
 
-function readInitialTheme(): Theme {
-  if (typeof window === "undefined") {
-    return "light";
-  }
-
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark") {
-    return stored;
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const initialTheme = readInitialTheme();
-    setTheme(initialTheme);
-    document.documentElement.dataset.theme = initialTheme;
+    setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
     setMounted(true);
   }, []);
 
@@ -34,7 +19,11 @@ export function ThemeToggle() {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     document.documentElement.dataset.theme = nextTheme;
-    window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    } catch {
+      // Keep the selected theme for this page if browser storage is unavailable.
+    }
   };
 
   const label = mounted
@@ -50,7 +39,6 @@ export function ThemeToggle() {
       className="button button-secondary"
       onClick={toggleTheme}
       aria-label={label}
-      aria-pressed={mounted ? theme === "dark" : undefined}
     >
       <span aria-hidden="true">{mounted && theme === "dark" ? "☀" : "☾"}</span>
       <span>{mounted ? (theme === "dark" ? "Light Mode" : "Dark Mode") : "Theme"}</span>

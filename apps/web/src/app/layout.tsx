@@ -6,20 +6,23 @@ import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Smart Food Delivery Time Prediction",
+  title: {
+    default: "Smart Food Delivery Time Prediction",
+    template: "%s | Smart Food Delivery Time Prediction",
+  },
   description:
     "Estimate food delivery times from distance, traffic, and weather conditions using Next.js and FastAPI.",
 };
 
 const themeInitScript = `
 (() => {
+  let saved;
   try {
-    const saved = window.localStorage.getItem("smart-delivery-theme");
-    const theme = saved === "dark" || saved === "light"
-      ? saved
-      : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    document.documentElement.dataset.theme = theme;
+    saved = window.localStorage.getItem("smart-delivery-theme");
   } catch {}
+  document.documentElement.dataset.theme = saved === "dark" || saved === "light"
+    ? saved
+    : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
 })();
 `;
 
@@ -32,7 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <div className="page-shell">
           <SiteHeader />
-          <main id="main-content" className="main-content">
+          <main id="main-content" className="main-content" tabIndex={-1}>
             {children}
           </main>
         </div>

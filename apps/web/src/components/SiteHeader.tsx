@@ -25,10 +25,7 @@ export function SiteHeader() {
           <span className="brand-mark" aria-hidden="true">
             SF
           </span>
-          <div>
-            <p className="brand-title">Smart Food Delivery Time Prediction</p>
-            <p className="brand-subtitle">ETA Explorer &amp; Delivery Forecast</p>
-          </div>
+          <span className="brand-title">Smart Food Delivery Time Prediction</span>
         </Link>
 
         <div className="header-controls">

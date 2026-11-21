@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type ConnectionState = "checking" | "online" | "offline";
 
@@ -16,13 +16,17 @@ export function ApiStatus() {
   const healthUrl = `${apiBaseUrl}/api/health`;
 
   const [status, setStatus] = useState<ConnectionState>("checking");
-  const [detail, setDetail] = useState<string>("Checking FastAPI health endpoint...");
+  const [detail, setDetail] = useState("Checking the delivery API…");
+  const activeCheck = useRef<AbortController | null>(null);
 
   const checkHealth = useCallback(async () => {
+    if (activeCheck.current) return;
+
     setStatus("checking");
-    setDetail("Checking FastAPI health endpoint...");
+    setDetail("Checking the delivery API…");
 
     const controller = new AbortController();
+    activeCheck.current = controller;
     const timeoutId = window.setTimeout(() => controller.abort(), 5000);
 
     try {
@@ -32,30 +36,38 @@ export function ApiStatus() {
         signal: controller.signal,
       });
 
+      if (activeCheck.current !== controller) return;
       if (!response.ok) {
         setStatus("offline");
         setDetail(`API responded with HTTP ${response.status}.`);
         return;
       }
 
-      const payload = (await response.json()) as { status?: string };
-      if (payload.status === "ok") {
+      const payload: unknown = await response.json();
+      if (activeCheck.current !== controller) return;
+      if (payload && typeof payload === "object" && "status" in payload && payload.status === "ok") {
         setStatus("online");
-        setDetail('FastAPI responded with {"status": "ok"}.');
+        setDetail("The delivery API is reachable.");
       } else {
         setStatus("offline");
         setDetail("Unexpected health payload received from API.");
       }
     } catch {
+      if (activeCheck.current !== controller) return;
       setStatus("offline");
-      setDetail("Unable to reach the FastAPI backend. Start uvicorn or Docker Compose.");
+      setDetail("Unable to reach the delivery API. Select Recheck API to try again.");
     } finally {
       window.clearTimeout(timeoutId);
+      if (activeCheck.current === controller) activeCheck.current = null;
     }
   }, [healthUrl]);
 
   useEffect(() => {
     void checkHealth();
+    return () => {
+      activeCheck.current?.abort();
+      activeCheck.current = null;
+    };
   }, [checkHealth]);
 
   const statusLabel =
@@ -87,9 +99,9 @@ export function ApiStatus() {
           type="button"
           className="button button-secondary"
           onClick={() => void checkHealth()}
-          disabled={status === "checking"}
+          aria-disabled={status === "checking"}
         >
-          {status === "checking" ? "Checking..." : "Recheck API"}
+          Recheck API
         </button>
       </div>
     </section>

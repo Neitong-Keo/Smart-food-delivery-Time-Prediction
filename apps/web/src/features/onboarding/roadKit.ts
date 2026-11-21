@@ -23,9 +23,6 @@ export interface IllustrativeEtaEstimate {
   baseTravelMinutes: number;
   trafficPenaltyMinutes: number;
   weatherPenaltyMinutes: number;
-  isIllustrative: true;
-  label: string;
-  disclaimer: string;
 }
 
 const KITCHEN_PREP_MINUTES = 10;
@@ -103,9 +100,5 @@ export function estimateIllustrativeEta(
     baseTravelMinutes,
     trafficPenaltyMinutes,
     weatherPenaltyMinutes,
-    isIllustrative: true,
-    label: `~${totalMinutes} min · Illustrative estimate`,
-    disclaimer:
-      "Illustrative estimate using sample route heuristics — not a live machine-learning prediction.",
   };
 }
