@@ -73,6 +73,8 @@ def validate_dataset(
 ) -> None:
     """Enforce the target and feature contracts on a cleaned dataset."""
     validate_feature_allowlist(features)
+    if target_column in features:
+        raise ValueError("The target column must be excluded from feature_allowlist.")
     missing = sorted(set([target_column, *features]) - set(records.columns))
     if missing:
         raise ValueError(f"Missing cleaned columns: {', '.join(missing)}")

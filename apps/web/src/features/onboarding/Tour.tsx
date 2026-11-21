@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   ONBOARDING_STEPS,
@@ -22,12 +22,30 @@ export function Tour() {
   const isFirstStep = state.activeIndex === 0;
   const isLastStep = state.activeIndex === ONBOARDING_STEPS.length - 1;
 
+  const handleClose = useCallback((completed = false) => {
+    setState((prev) => closeTour(prev, completed));
+    requestAnimationFrame(() => {
+      triggerRef.current?.focus();
+    });
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tour") === "1") {
+      setState((prev) => openTour(prev));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (state.isOpen) {
+      dialogRef.current?.focus();
+    }
+  }, [state.isOpen]);
+
   useEffect(() => {
     if (!state.isOpen) {
       return;
     }
-
-    dialogRef.current?.focus();
 
     const targetElement = document.getElementById(currentStep.targetId);
     if (targetElement) {
@@ -38,14 +56,42 @@ export function Tour() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        setState((prev) => closeTour(prev));
-        triggerRef.current?.focus();
-      } else if (event.key === "ArrowRight") {
+        handleClose(false);
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
         event.preventDefault();
         setState((prev) => nextTourStep(prev));
-      } else if (event.key === "ArrowLeft") {
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
         event.preventDefault();
         setState((prev) => previousTourStep(prev));
+        return;
+      }
+
+      if (event.key === "Tab" && dialogRef.current) {
+        const focusable = Array.from(
+          dialogRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusable.length === 0) {
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
 
@@ -57,12 +103,7 @@ export function Tour() {
         targetElement.removeAttribute("data-tour-active");
       }
     };
-  }, [state.isOpen, currentStep.targetId]);
-
-  const handleClose = (completed = false) => {
-    setState((prev) => closeTour(prev, completed));
-    triggerRef.current?.focus();
-  };
+  }, [state.isOpen, currentStep.targetId, handleClose]);
 
   return (
     <>
@@ -74,7 +115,7 @@ export function Tour() {
         aria-haspopup="dialog"
         aria-expanded={state.isOpen}
       >
-        {state.hasCompleted ? "Replay Tour" : "Start Guided Tour"}
+        Take the tour
       </button>
 
       {state.isOpen && (
@@ -104,7 +145,7 @@ export function Tour() {
                 type="button"
                 className="icon-button"
                 onClick={() => handleClose(false)}
-                aria-label="Close onboarding tour"
+                aria-label="Dismiss tour"
               >
                 ×
               </button>
@@ -145,7 +186,7 @@ export function Tour() {
                   className="button button-ghost"
                   onClick={() => handleClose(false)}
                 >
-                  Skip
+                  Close
                 </button>
                 <button
                   type="button"
@@ -176,4 +217,3 @@ export function Tour() {
     </>
   );
 }
-

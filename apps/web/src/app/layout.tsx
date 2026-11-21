@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { SiteHeader } from "@/components/SiteHeader";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Smart Food Delivery Time Prediction",
   description:
-    "Phase 1 monorepo foundation with Next.js, FastAPI, and a backend-owned scikit-learn workflow scaffold.",
+    "Estimate food delivery times from distance, traffic, and weather conditions using Next.js and FastAPI.",
 };
 
 const themeInitScript = `
@@ -27,8 +29,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <div className="page-shell">
+          <SiteHeader />
+          <main id="main-content" className="main-content">
+            {children}
+          </main>
+        </div>
+      </body>
     </html>
   );
 }
-

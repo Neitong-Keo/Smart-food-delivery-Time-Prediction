@@ -1,19 +1,24 @@
 """Smoke tests for the FastAPI health endpoint and CORS configuration."""
 
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from app.core.config import DEFAULT_FRONTEND_ORIGIN
-from app.main import app, create_app
-from ml.manifest import resolve_dataset_paths
+from app.main import create_app
 
 
-def test_health_endpoint_returns_ok_without_dataset_or_model() -> None:
+def test_health_endpoint_returns_ok_without_dataset_or_model(monkeypatch) -> None:
     """API starts cleanly and returns HTTP 200 {'status': 'ok'} with no ML files present."""
-    paths = resolve_dataset_paths()
-    assert not paths.raw_csv.exists()
-    assert not paths.model_artifact.exists()
+    open_file = Path.open
 
-    client = TestClient(app)
+    def disallow_ml_files(path, *args, **kwargs):
+        assert path.suffix not in {".csv", ".parquet", ".joblib"}
+        return open_file(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", disallow_ml_files)
+
+    client = TestClient(create_app())
     response = client.get("/api/health")
 
     assert response.status_code == 200

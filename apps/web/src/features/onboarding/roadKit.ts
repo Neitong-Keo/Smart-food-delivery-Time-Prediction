@@ -104,9 +104,8 @@ export function estimateIllustrativeEta(
     trafficPenaltyMinutes,
     weatherPenaltyMinutes,
     isIllustrative: true,
-    label: `~${totalMinutes} min (Illustrative)`,
+    label: `~${totalMinutes} min · Illustrative estimate`,
     disclaimer:
-      "Illustrative Phase 1 estimate using sample route heuristics — not a live scikit-learn prediction.",
+      "Illustrative estimate using sample route heuristics — not a live machine-learning prediction.",
   };
 }
-

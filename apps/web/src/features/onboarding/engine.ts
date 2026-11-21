@@ -15,35 +15,35 @@ export interface TourState {
 export const ONBOARDING_STEPS: TourStep[] = [
   {
     id: "welcome",
-    title: "Welcome to Smart Food Delivery Time Prediction",
+    title: "What This App Predicts",
     description:
-      "Phase 1 establishes the monorepo foundation: a Next.js web app on port 3600, a FastAPI backend on port 8600, and a scikit-learn workflow scaffold inside apps/backend/ml/.",
+      "Smart Food Delivery Time Prediction estimates total door-to-door delivery duration in minutes using route distance, traffic, and weather conditions.",
     targetId: "hero-section",
-    highlightSummary: "Monorepo foundation ready for Phase 2 dataset ingestion and training.",
+    highlightSummary: "Navigate to /predict for the ETA calculator or /model for evaluation insights.",
   },
   {
     id: "api-health",
-    title: "Live FastAPI Health Monitor",
+    title: "Live FastAPI Health Status",
     description:
-      "This status widget calls GET /api/health using NEXT_PUBLIC_API_BASE_URL (defaulting to http://localhost:8600) and clearly distinguishes checking, online, and offline states.",
+      "The API status indicator calls GET /api/health via NEXT_PUBLIC_API_BASE_URL (defaulting to http://localhost:8600) and displays checking, online, or offline states.",
     targetId: "api-status-card",
-    highlightSummary: "Backend boots cleanly with zero datasets or model artifacts present.",
+    highlightSummary: "Confirms backend connectivity before submitting prediction requests.",
   },
   {
     id: "route-explorer",
-    title: "Sample Route & Illustrative ETA Breakdown",
+    title: "Sample Route & Illustrative Estimate",
     description:
-      "Explore how distance, traffic congestion, and weather conditions influence delivery duration. All Phase 1 ETAs are explicitly labeled as illustrative previews.",
+      "Use the sample routes from roadKit.ts to preview how distance, traffic congestion, and weather affect delivery time. All sample outputs are labeled Illustrative estimate.",
     targetId: "route-preview-card",
-    highlightSummary: "Powered by roadKit.ts heuristics until trained model artifacts arrive.",
+    highlightSummary: "Interactive route heuristics let you test scenarios even before live ML inference is wired.",
   },
   {
     id: "theme-and-keys",
-    title: "Theme Toggle & Keyboard Navigation",
+    title: "Theme Toggle & Calculator Workspace",
     description:
-      "Switch between light and dark themes at any time. During this tour, use ArrowRight and ArrowLeft to move between steps, or press Escape to exit.",
+      "Switch between Deep Navy dark mode and light mode anytime from the header. Press Escape or Close to exit the tour and return focus to the tour button.",
     targetId: "theme-toggle-control",
-    highlightSummary: "Accessible controls and persistent theme preference.",
+    highlightSummary: "Keyboard shortcuts: ArrowLeft, ArrowRight, and Escape.",
   },
 ];
 
@@ -107,4 +107,3 @@ export function getCurrentStep(
 ): TourStep {
   return steps[state.activeIndex] ?? steps[0];
 }
-

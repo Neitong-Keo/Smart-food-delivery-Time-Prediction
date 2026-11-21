@@ -71,7 +71,9 @@ def parse_order_timestamp(
     whole_minutes = minute_offsets.round()
     valid_fraction = fractions.between(0, 1) & (minute_offsets - whole_minutes).abs().le(1e-5)
     minutes = clock_minutes.fillna(whole_minutes.where(valid_fraction))
-    timestamps = day + pd.to_timedelta(minutes, unit="min")
+    offset = pd.to_timedelta(minutes, unit="min")
+    outside_timestamp_range = day.gt(pd.Timestamp.max.floor("min") - offset)
+    timestamps = day.mask(outside_timestamp_range) + offset
     counts = _counts(
         {
             "missing_date": dates.isna(),
@@ -80,6 +82,7 @@ def parse_order_timestamp(
             "invalid_time": times.notna() & minutes.isna(),
             "fractional_day_times": valid_fraction,
             "midnight_rollovers": valid_fraction & fractions.eq(1),
+            "out_of_range_timestamp": outside_timestamp_range,
             "null_timestamp": timestamps.isna(),
         }
     )
@@ -140,6 +143,10 @@ def clean_coordinates(
         "implausible_distances": int(too_far.sum()),
         "max_plausible_km": max_distance_km,
         "pre_cutoff_km": _numeric_range(distance),
+        "excluded_km": _numeric_range(distance[too_far]),
+        "implausible_distances_with_negative_restaurant_coordinates": int(
+            (too_far & coordinates[list(COORDINATE_PAIRS["restaurant"])].lt(0).any(axis=1)).sum()
+        ),
         "retained_km": _numeric_range(valid),
     }
     return coordinates.astype("Float64"), valid, report
@@ -290,13 +297,12 @@ def _counts(masks: dict[str, pd.Series]) -> dict[str, int]:
 
 
 def _numeric_range(values: pd.Series) -> dict[str, float | None]:
+    if not values.count():
+        return {"min": None, "median": None, "max": None}
     return {
-        label: float(value) if pd.notna(value) else None
-        for label, value in {
-            "min": values.min(),
-            "median": values.median(),
-            "max": values.max(),
-        }.items()
+        "min": float(values.min()),
+        "median": float(values.median()),
+        "max": float(values.max()),
     }
 
 

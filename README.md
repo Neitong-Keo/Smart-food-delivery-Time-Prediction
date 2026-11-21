@@ -1,6 +1,6 @@
 # Smart Food Delivery Time Prediction
 
-This project aims to predict food delivery times from route distance, traffic, and weather. Phase 1 provides a Next.js route explorer with illustrative ETAs, a FastAPI health endpoint, and a Python scaffold for data ingestion and model training. You can run the demo without a CSV or a trained model.
+This project aims to predict food delivery times. It includes a Next.js route explorer with illustrative ETAs, a FastAPI health endpoint, and a Python workflow that cleans and profiles the delivery dataset. You can run the demo without a CSV or a trained model.
 
 ## Run locally
 
@@ -47,7 +47,7 @@ Compose uses the same default URLs as the local setup. To override them, copy `.
 
 ## Run tests and build
 
-Run the Python smoke tests before adding the dataset or a model artifact. The suite checks the health response, default CORS policy, ML paths, and the scaffold commands.
+The Python suite uses fixtures to check dataset cleaning, feature selection, and Parquet and report output. It also checks the FastAPI health response and default CORS policy.
 
 ```powershell
 # From the repository root, after installing the backend dependencies
@@ -64,18 +64,20 @@ npm.cmd run build
 Pop-Location
 ```
 
-## ML scaffold
+## Clean and profile the dataset
 
-[Dataset configuration](apps/backend/ml/configs/dataset.yaml) resolves paths relative to `apps/backend/ml/`. For future dataset work, place the source CSV at `apps/backend/ml/data/raw/dataset.csv`. The target column and feature mappings are pending verification of the CSV headers. Git ignores local datasets and generated artifacts in the configured directories.
+[Dataset configuration](apps/backend/ml/configs/dataset.yaml) defines the expected headers, quality rules, output paths, and feature allowlist. The default source is `apps/backend/ml/data/raw/dataset.csv`.
 
-From `apps/backend`, run the scaffold entry points below. Both print a Phase 1 implementation message and exit nonzero.
+From `apps/backend`, run one of these commands after installing the backend dependencies.
 
 ```powershell
 .\.venv\Scripts\python.exe -m ml.scripts.ingest
-.\.venv\Scripts\python.exe -m ml.scripts.train
+.\.venv\Scripts\python.exe -m ml.scripts.ingest --input "ml/data/raw/Zomato Dataset.csv"
 ```
 
-The configuration reserves `data/processed/dataset.parquet`, `data/manifests/dataset.json`, and `artifacts/v1/` for future outputs.
+The command writes `ml/data/processed/dataset.parquet` and `ml/data/manifests/dataset.json`. The report includes raw profiles, row reconciliation, quality flags, remaining nulls, and the final schema. Git ignores the raw CSV and generated outputs.
+
+`distance_km` is a straight-line estimate. Missing or invalid coordinate pairs and distances above 100 km produce a null distance. The dataset retains order timestamps for a future chronological split. Training will use the configured order-time features and fit any imputation, encoding, or scaling on training rows.
 
 ## Repository layout
 
@@ -83,7 +85,7 @@ The configuration reserves `data/processed/dataset.parquet`, `data/manifests/dat
 | --- | --- |
 | [`apps/web/`](apps/web/) | Next.js frontend, route explorer, theme toggle, and onboarding |
 | [`apps/backend/app/`](apps/backend/app/) | FastAPI application, configuration, and health endpoint |
-| [`apps/backend/ml/`](apps/backend/ml/) | Dataset paths and ML workflow scaffold |
-| [`apps/backend/tests/`](apps/backend/tests/) | API and ML scaffold smoke tests |
+| [`apps/backend/ml/`](apps/backend/ml/) | Dataset configuration, cleaning, and quality reporting |
+| [`apps/backend/tests/`](apps/backend/tests/) | API and ingestion tests |
 | [`docs/architecture.md`](docs/architecture.md) | Service and ML package boundaries |
 | [`infra/README.md`](infra/README.md) | Container setup |

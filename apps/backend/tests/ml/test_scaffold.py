@@ -2,7 +2,7 @@
 
 from ml import ML_BASE_DIR
 from ml.manifest import load_dataset_config, resolve_dataset_paths
-from ml.scripts import ingest, train
+from ml.scripts import train
 
 
 def test_dataset_config_resolves_paths_under_ml_base_dir() -> None:
@@ -15,17 +15,11 @@ def test_dataset_config_resolves_paths_under_ml_base_dir() -> None:
     assert paths.processed_parquet == ML_BASE_DIR / "data" / "processed" / "dataset.parquet"
     assert paths.dataset_manifest == ML_BASE_DIR / "data" / "manifests" / "dataset.json"
     assert paths.model_artifact == ML_BASE_DIR / "artifacts" / "v1" / "model.joblib"
-    assert config["schema"]["target_column"] is None
+    assert config["schema"]["target_column"] == "delivery_time_minutes"
 
 
-def test_placeholder_cli_commands_exit_nonzero(capsys) -> None:
-    """Phase 1 placeholder CLIs exit with nonzero status and print clear guidance."""
-    ingest_exit_code = ingest.main()
-    ingest_err = capsys.readouterr().err
-
-    assert ingest_exit_code != 0
-    assert "ml.scripts.ingest" in ingest_err
-
+def test_training_remains_a_placeholder(capsys) -> None:
+    """Training still exits with nonzero status and prints clear guidance."""
     train_exit_code = train.main()
     train_err = capsys.readouterr().err
 
