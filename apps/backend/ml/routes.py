@@ -5,7 +5,7 @@ import os
 import time
 import urllib.error
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -94,6 +94,7 @@ def enrich_records(
     *,
     delay_seconds: float = 0.0,
     on_checkpoint: Callable[[], None] | None = None,
+    prefetch: Callable[[Iterable[Pair]], None] | None = None,
 ) -> tuple[pd.DataFrame, EnrichmentSummary]:
     """Add road_distance_km and route_duration_minutes, requesting each unique pair once.
 
@@ -108,6 +109,8 @@ def enrich_records(
     ]
     keys = [_key(pair) for pair in pairs]
     unique = dict(zip(keys, pairs))
+    if prefetch is not None:
+        prefetch(pair for key, pair in unique.items() if key not in cache)
 
     failed = consecutive = requested = 0
     for key, pair in unique.items():
@@ -164,6 +167,8 @@ def run_enrichment(
     routing_url: str,
     delay_seconds: float = 0.0,
     config_path: Path = DEFAULT_DATASET_CONFIG_PATH,
+    *,
+    use_table: bool = False,
 ) -> EnrichmentSummary:
     """Read the cleaned Parquet and write a copy with road route columns."""
     config = load_dataset_config(config_path)
@@ -175,17 +180,31 @@ def run_enrichment(
         )
 
     cache_path = paths.base_dir / config["paths"]["route_cache"]
+    if use_table:
+        cache_path = cache_path.with_stem(f"{cache_path.stem}_table")
     output_path = paths.base_dir / config["paths"]["routed_parquet"]
     cache = json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.is_file() else {}
     max_point_to_road_m = float(config["serving"]["max_point_to_road_m"])
 
     records = pd.read_parquet(paths.processed_parquet)
+
+    def checkpoint() -> None:
+        _write_json(cache_path, cache)
+
+    def prefetch(pairs: Iterable[Pair]) -> None:
+        from ml.route_table import fetch_route_table, group_table_pairs
+
+        for batch in group_table_pairs(pairs):
+            cache.update(fetch_route_table(routing_url, batch, max_point_to_road_m, delay_seconds))
+            checkpoint()
+
     enriched, summary = enrich_records(
         records,
         lambda pair: fetch_route(routing_url, pair, max_point_to_road_m),
         cache,
         delay_seconds=delay_seconds,
-        on_checkpoint=lambda: _write_json(cache_path, cache),
+        on_checkpoint=checkpoint,
+        prefetch=prefetch if use_table else None,
     )
     staged = output_path.with_suffix(".tmp")
     enriched.to_parquet(staged, index=False)

@@ -86,8 +86,8 @@ Press `Ctrl+C` in each terminal to stop the app.
 The API is ready to serve a fitted scikit-learn pipeline.
 
 1. Add road distances to the training data, as described in [Prepare the training data](#prepare-the-training-data).
-2. Train on the columns in `serving.model_features`.
-3. Save the fitted pipeline to `apps/backend/ml/artifacts/v1/model.joblib`.
+2. Run the model training command to compare Decision Tree and XGBoost and export the winner.
+3. Check `apps/backend/ml/artifacts/v1/` for the fitted pipeline, metrics, and evaluation chart.
 4. Restart the API in model mode:
 
    ```powershell
@@ -126,15 +126,26 @@ Or use the shared public server, which is limited to one request about every sec
 .\.venv\Scripts\python.exe -m ml.scripts.enrich_routes --routing-url https://router.project-osrm.org
 ```
 
-Completed routes are cached, so you can stop and rerun the command. It writes `ml/data/processed/dataset_with_routes.parquet` and prints the real road distance range. Copy that range into `serving.training_road_distance_km` in [`dataset.yaml`](apps/backend/ml/configs/dataset.yaml).
+For a one-off run using an OSRM server that supports Table distances, add `--table` to group nearby trips into small requests. Table mode uses the fastest mapped route. The app and the default training route command can prefer a ferry-free alternative.
 
-**3. Check the median baseline (optional)**
+Completed routes are cached, so you can stop and rerun the command. The route file is `ml/data/processed/dataset_with_routes.parquet`. Use the fitted range reported in the training manifest for `serving.training_road_distance_km` in [`dataset.yaml`](apps/backend/ml/configs/dataset.yaml).
+
+**3. Train and evaluate the models**
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-training.txt
+.\.venv\Scripts\python.exe -m ml.scripts.train_models
+```
+
+This selects the candidate with the lowest validation mean absolute error, evaluates the final pipeline on newer orders, and writes `model.joblib`, `metrics.json`, `manifest.json`, `evaluation.png`, and `test_predictions.csv` under `ml/artifacts/v1/`.
+
+The original median baseline also runs on the cleaned data before routing:
 
 ```powershell
 .\.venv\Scripts\python.exe -m ml.scripts.train
 ```
 
-This reports the chronological split and the validation error that a trained model needs to beat.
+The model training command reruns the median baseline on the same road-distance split as both candidates, so use that run for model comparisons.
 
 ## Configuration
 

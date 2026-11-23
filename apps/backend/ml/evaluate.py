@@ -1,11 +1,15 @@
-"""Model evaluation metrics helpers (Phase 1 scaffold)."""
+"""Regression metrics for delivery times measured in minutes."""
 
 from typing import Any
 
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+
 
 def evaluate_predictions(y_true: Any, y_pred: Any) -> dict[str, float]:
-    """Compute regression metrics (e.g., MAE, RMSE, R2) for delivery time predictions."""
-    raise NotImplementedError(
-        "Model evaluation is scaffolded in Phase 1 and will be implemented in Phase 2."
-    )
+    """Return MAE, RMSE, and R² for the same set of orders."""
+    return {
+        "mae": float(mean_absolute_error(y_true, y_pred)),
+        "rmse": float(root_mean_squared_error(y_true, y_pred)),
+        "r2": float(r2_score(y_true, y_pred)),
+    }
 
