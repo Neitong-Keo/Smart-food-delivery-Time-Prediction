@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { BrandMark } from "@/components/layout/BrandMark";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home" },
-  { href: "/predict", label: "Estimate" },
-  { href: "/model", label: "Model Insights" },
+  { href: "/restaurants", label: "Restaurants", matches: ["/restaurants", "/delivery", "/predict"] },
+  { href: "/history", label: "History", matches: ["/history"] },
+  { href: "/model", label: "Model", matches: ["/model"] },
 ];
 
 export function SiteHeader() {
@@ -21,19 +22,15 @@ export function SiteHeader() {
       </a>
 
       <header className="site-header">
-        <Link href="/" className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            SF
-          </span>
-          <span className="brand-title">Smart Food Delivery Time Prediction</span>
-        </Link>
+        <div className="container site-header-inner">
+          <Link href="/" className="brand">
+            <BrandMark />
+            Smart Delivery
+          </Link>
 
-        <div className="header-controls">
           <nav className="nav-links" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => {
-              const isActive =
-                item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-
+              const isActive = item.matches.some((path) => pathname.startsWith(path));
               return (
                 <Link
                   key={item.href}
@@ -47,10 +44,14 @@ export function SiteHeader() {
             })}
           </nav>
 
-          <ThemeToggle />
+          <div className="header-controls">
+            <ThemeToggle />
+            <Link href="/restaurants" className="button button-primary header-cta">
+              Predict delivery time
+            </Link>
+          </div>
         </div>
       </header>
     </>
   );
 }
-

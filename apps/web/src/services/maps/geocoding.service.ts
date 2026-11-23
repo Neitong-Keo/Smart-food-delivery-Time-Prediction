@@ -1,0 +1,97 @@
+import { config } from "@/lib/config";
+import { fetchJson } from "@/services/maps/fetch-json";
+import type { LatLng, PlaceSuggestion } from "@/types/location";
+
+const RESULT_LIMIT = 6;
+/** About 50 km around the restaurant, so results stay in the delivery area. */
+const SEARCH_RADIUS_DEGREES = 0.45;
+
+interface PhotonProperties {
+  osm_type?: string;
+  osm_id?: number;
+  name?: string;
+  housenumber?: string;
+  street?: string;
+  district?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
+
+interface PhotonResponse {
+  features?: Array<{
+    geometry?: { coordinates?: [number, number] };
+    properties?: PhotonProperties;
+  }>;
+}
+
+function describePlace(properties: PhotonProperties) {
+  const streetLine = [properties.housenumber, properties.street].filter(Boolean).join(" ");
+  const primary =
+    properties.name || streetLine || properties.district || properties.city || "Selected location";
+  const parts = [streetLine, properties.district, properties.city, properties.state];
+  const secondary = parts
+    .filter((part, index): part is string => Boolean(part) && part !== primary && parts.indexOf(part) === index)
+    .join(", ");
+  return { primary, secondary };
+}
+
+export async function searchPlaces(
+  query: string,
+  near: LatLng,
+  signal?: AbortSignal,
+): Promise<PlaceSuggestion[]> {
+  const bbox = [
+    near.lng - SEARCH_RADIUS_DEGREES,
+    near.lat - SEARCH_RADIUS_DEGREES,
+    near.lng + SEARCH_RADIUS_DEGREES,
+    near.lat + SEARCH_RADIUS_DEGREES,
+  ].join(",");
+  const params = new URLSearchParams({
+    q: query,
+    lat: String(near.lat),
+    lon: String(near.lng),
+    bbox,
+    limit: String(RESULT_LIMIT),
+    lang: "en",
+  });
+  const { features = [] } = await fetchJson<PhotonResponse>(
+    `${config.geocodingUrl}/api/?${params}`,
+    signal,
+  );
+
+  return features.flatMap((feature, index) => {
+    const coordinates = feature.geometry?.coordinates;
+    if (!coordinates) return [];
+    const properties = feature.properties ?? {};
+    return [
+      {
+        id: `${properties.osm_type ?? "place"}-${properties.osm_id ?? index}`,
+        lat: coordinates[1],
+        lng: coordinates[0],
+        ...describePlace(properties),
+      },
+    ];
+  });
+}
+
+export function formatSuggestion({ primary, secondary }: PlaceSuggestion): string {
+  return secondary ? `${primary}, ${secondary}` : primary;
+}
+
+export async function reverseGeocode(point: LatLng, signal?: AbortSignal): Promise<string | null> {
+  const params = new URLSearchParams({
+    lat: String(point.lat),
+    lon: String(point.lng),
+    limit: "1",
+    lang: "en",
+  });
+  const { features = [] } = await fetchJson<PhotonResponse>(
+    `${config.geocodingUrl}/reverse?${params}`,
+    signal,
+  );
+  const properties = features[0]?.properties;
+  if (!properties) return null;
+  const { primary, secondary } = describePlace(properties);
+  return secondary ? `${primary}, ${secondary}` : primary;
+}

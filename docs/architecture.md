@@ -4,9 +4,10 @@ The project aims to estimate food delivery duration in minutes using information
 
 ## Application architecture
 
-- **Next.js frontend** runs on port `3600`. The TypeScript app includes an illustrative route tour, a `/predict` page for prediction availability, and a `/model` page reserved for evaluation results. [Frontend source](../apps/web/src/)
-- **FastAPI backend** runs on port `8600` and exposes `GET /api/health` and interactive API docs. The versioned router is the destination for the future prediction endpoint. [FastAPI application](../apps/backend/app/)
-- **ML workflow** lives under `apps/backend/ml/`. This package owns dataset cleaning, data-quality validation, splitting, baseline training, and future model pipeline code. [ML package](../apps/backend/ml/)
+- **Next.js frontend** runs on port `3600`. The order flow is `/restaurants`, `/delivery`, and `/predict`, with `/history`, `/model`, and an illustrative `/explore` page alongside it. API, map, and history access live in `src/services/`, with state in `src/hooks/`. [Frontend source](../apps/web/src/)
+- **FastAPI backend** runs on port `8600` and exposes health, restaurant, prediction, and model status endpoints. Restaurants sit behind a repository. Predictions sit behind a `Predictor` interface with demo and trained-model implementations. [FastAPI application](../apps/backend/app/)
+- **Map services** are called from the browser and need no keys: OpenFreeMap tiles rendered with MapLibre, Photon for address search, and OSRM for actual road routes. [Map services](../apps/web/src/services/maps/)
+- **ML workflow** lives under `apps/backend/ml/`. This package owns dataset cleaning, data-quality validation, road route enrichment, splitting, baseline training, and future model pipeline code. [ML package](../apps/backend/ml/)
 
 ## Dataset and workflow
 
@@ -14,10 +15,11 @@ The project aims to estimate food delivery duration in minutes using information
 | --- | --- |
 | `apps/backend/ml/data/raw/dataset.csv` | Default input. The verified run used `Zomato Dataset.csv` via `--input`. |
 | `apps/backend/ml/data/processed/dataset.parquet` | Cleaned dataset with the `delivery_time_minutes` target and `order_timestamp` for splitting. |
+| `apps/backend/ml/data/processed/dataset_with_routes.parquet` | Cleaned dataset plus the actual `road_distance_km` for each order. This is the model's training file. |
 | `apps/backend/ml/data/manifests/dataset.json` | Data-quality report covering row counts, rule results, nulls, and schema. |
 | `apps/backend/ml/artifacts/v1/` | Destination for the future fitted pipeline and evaluation metrics. |
 
-Run `python -m ml.scripts.ingest` and then `python -m ml.scripts.train` from `apps/backend/` with the backend Python environment active. Ingestion preserves the input CSV and writes the cleaned dataset and quality report. Training uses the configured order-time feature allowlist and divides usable orders chronologically. The raw data and generated outputs are Git-ignored. [Dataset configuration](../apps/backend/ml/configs/dataset.yaml)
+Run `python -m ml.scripts.ingest`, `python -m ml.scripts.enrich_routes`, and `python -m ml.scripts.train` from `apps/backend/` with the backend Python environment active. Ingestion preserves the input CSV and writes the cleaned dataset and quality report. Route enrichment adds the actual road distance. The baseline uses the configured order-time feature allowlist and divides usable orders chronologically. Trained models use `serving.model_features`, which replaces straight-line `distance_km` with `road_distance_km`. The raw data and generated outputs are Git-ignored. [Dataset configuration](../apps/backend/ml/configs/dataset.yaml)
 
 ## Verified status
 
@@ -26,9 +28,10 @@ Run `python -m ml.scripts.ingest` and then `python -m ml.scripts.train` from `ap
 | Completed | Service foundation | Next.js provides the route explorer and application routes. FastAPI health and CORS are covered by backend tests. |
 | Completed | Dataset audit and cleaning | Ingestion and the audit notebook verified 45,584 input and output rows. The Parquet and quality report are available locally. |
 | Completed | Chronological split and median baseline | The CLI and baseline notebook agree on the split sizes and the validation MAE of 7.752280 minutes. |
-| In progress | Prediction experience | The prediction and model insights pages show availability messages while live estimates and evaluation results are pending. |
-| Remaining | Candidate models and final evaluation | Train and compare the three candidates, evaluate the winner on the test partition, and save the fitted pipeline and metrics. |
-| Remaining | Live inference | Add a prediction endpoint and an ETA calculator aligned to the saved pipeline's input schema. |
+| Completed | Delivery application | The full order flow runs with sample restaurants, live maps and road routing, labelled demo predictions, and browser-stored history. |
+| Completed | Model serving | The API loads a saved pipeline, checks its columns, and applies input limits. Tests cover this with throwaway pipelines. |
+| Remaining | Road distances for the full dataset | Run `ml.scripts.enrich_routes` and copy the printed range into `dataset.yaml`. |
+| Remaining | Candidate models and final evaluation | Train and compare the three candidates on `road_distance_km`, evaluate the winner on the test partition, and save the fitted pipeline and metrics. [Integration guide](ml-integration.md) |
 
 ### Baseline run
 
@@ -42,7 +45,7 @@ The cleaned Parquet contained 45,584 rows. The split excluded 1,731 rows with mi
 
 ## Remaining steps
 
-1. Train Linear Regression, Decision Tree Regression, and Random Forest Regression. Fit any imputation, encoding, scaling, and model parameters using the training partition.
+1. Add road distances with `ml.scripts.enrich_routes`. Then train Linear Regression, Decision Tree Regression, and Random Forest Regression on `serving.model_features`. Fit any imputation, encoding, scaling, and model parameters using the training partition.
 2. Compare each candidate with the baseline on the same validation orders. Choose by validation MAE and use RMSE to check whether large misses dominate the error.
 3. Evaluate the selected pipeline once on the held-out test partition. Save the fitted preprocessing and estimator together with versioned metrics and the input schema.
-4. Load the pipeline in FastAPI and expose the prediction endpoint. Build the Next.js ETA calculator around the order-time feature contract and connect it to the endpoint.
+4. Save the pipeline to `ml/artifacts/v1/model.joblib` and start the API with `PREDICTION_MODE=model`. The [integration guide](ml-integration.md) has the details. The endpoint and frontend are already in place.

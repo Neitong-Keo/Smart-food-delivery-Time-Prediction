@@ -26,6 +26,8 @@ class Settings:
     cors_allow_origins: list[str] = field(
         default_factory=lambda: [DEFAULT_FRONTEND_ORIGIN]
     )
+    prediction_mode: str = "demo"
+    model_path: str | None = None
 
 
 def get_settings() -> Settings:
@@ -35,5 +37,7 @@ def get_settings() -> Settings:
         app_version=os.getenv("APP_VERSION", "0.1.0"),
         log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
         cors_allow_origins=_parse_origins(os.getenv("CORS_ALLOW_ORIGINS")),
+        prediction_mode=os.getenv("PREDICTION_MODE", "demo").strip().lower(),
+        model_path=os.getenv("MODEL_PATH", "").strip() or None,
     )
 
