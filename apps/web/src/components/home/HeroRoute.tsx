@@ -52,11 +52,11 @@ export function HeroRoute() {
         <img src="/images/restaurants/beef-lok-lak.jpg" alt="" width={72} height={72} />
         <div className="hero-ticket-copy">
           <p className="hero-ticket-label">Example order</p>
-          <p className="hero-ticket-name">Lok Lak Corner</p>
-          <p className="hero-ticket-meta">3.8 km by road</p>
+          <p className="hero-ticket-name">Brigade Grill</p>
+          <p className="hero-ticket-meta">4.7 km by road</p>
         </div>
         <p className="hero-ticket-time">
-          18<span>minutes</span>
+          17<span>minutes</span>
         </p>
       </div>
     </div>

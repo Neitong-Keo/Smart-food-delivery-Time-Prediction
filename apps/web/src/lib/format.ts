@@ -10,8 +10,13 @@ export function formatKm(km: number): string {
   return `${km < 10 ? km.toFixed(1) : Math.round(km)} km`;
 }
 
-export function formatClock(date: Date): string {
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+export function formatClock(date: Date, timeZone?: string | null): string {
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: timeZone ?? undefined,
+    timeZoneName: timeZone ? "short" : undefined,
+  });
 }
 
 export function formatDateTime(iso: string): string {
@@ -36,7 +41,7 @@ export function formatOrderTime(dayOfWeek: number, hour: number): string {
   return `${WEEKDAYS[dayOfWeek] ?? "Unknown day"}, ${hour % 12 || 12} ${period}`;
 }
 
-/** ISO 8601 with the browser's UTC offset, so the backend sees the local clock hour. */
+/** ISO 8601 with the browser's UTC offset, so the backend can convert the order instant. */
 export function toLocalIsoString(date: Date): string {
   const pad = (value: number) => String(Math.trunc(Math.abs(value))).padStart(2, "0");
   const offset = -date.getTimezoneOffset();

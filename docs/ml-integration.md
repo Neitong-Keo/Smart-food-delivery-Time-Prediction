@@ -28,8 +28,8 @@ The model must train on the same measure it receives in the app. The Kaggle data
 | `Type_of_order` | `Type_of_order` | Order type control | `snack`, `meal`, `drinks`, `buffet` |
 | `Festival` | `Festival` | Festival checkbox | `yes`, `no` |
 | `City` | `City` | `city_type` on the restaurant | `Metropolitan`, `Urban`, `Semi-Urban` |
-| `order_hour` | `Time_Orderd` | Local order time | 0 to 23 |
-| `order_day_of_week` | `Order_Date` | Local order date | Monday = 0, Sunday = 6 |
+| `order_hour` | `Time_Orderd` | Order time in the restaurant's time zone | 0 to 23 |
+| `order_day_of_week` | `Order_Date` | Order date in the restaurant's time zone | Monday = 0, Sunday = 6 |
 | `road_distance_km` | OSRM route between the restaurant and delivery coordinates | OSRM route between the restaurant and the customer's pin | Kilometers along the road |
 
 Training and the app use OSRM's driving profile and reject points more than 500 m from a road. The route-by-route enrichment and the app prefer an alternative without a ferry when available. The optional `--table` enrichment batches nearby trips and uses fastest-route distances without step details.
@@ -73,7 +73,7 @@ The run used OSRM Table distances for the Kaggle coordinates. Of 45,584 cleaned 
 
 XGBoost won with 300 trees, depth 5, and a learning rate of 0.03. After refitting, its test MAE was **6.04 minutes**, RMSE was **7.56 minutes**, and R² was **0.316**. Shuffling order hour on validation increased MAE the most, by 1.07 minutes. On test orders that took more than 35 minutes, the model underestimated by 9.89 minutes on average.
 
-These results measure performance on the held-out Zomato orders. Evaluation on observed Phnom Penh deliveries requires local delivery records. See [Before presenting model results](#before-presenting-model-results) for the dataset's location limitations.
+These results measure performance on the held-out Zomato orders from multiple Indian cities. See [Before presenting model results](#before-presenting-model-results) for the dataset's location limitations.
 
 ### 3. Start the API in model mode
 
@@ -96,15 +96,15 @@ Only load `model.joblib` files from a source you trust, because loading one can 
 ```json
 {
   "restaurant_id": "restaurant_001",
-  "restaurant_latitude": 11.5615,
-  "restaurant_longitude": 104.9285,
-  "delivery_latitude": 11.5696,
-  "delivery_longitude": 104.9211,
-  "road_distance_km": 1.61,
-  "route_duration_minutes": 2.8,
+  "restaurant_latitude": 12.972532,
+  "restaurant_longitude": 77.608179,
+  "delivery_latitude": 12.992532,
+  "delivery_longitude": 77.628179,
+  "road_distance_km": 4.6892,
+  "route_duration_minutes": 7.47,
   "order_type": "meal",
   "is_festival": false,
-  "order_placed_at": "2026-11-23T19:00:00+07:00"
+  "order_placed_at": "2026-11-23T19:00:00+05:30"
 }
 ```
 
@@ -150,7 +150,7 @@ docker run -t -i -p 5000:5000 -v "${PWD}:/data" ghcr.io/project-osrm/osrm-backen
 
 - **Some rows have no usable road route.** In the Kaggle preview, 5 of 47 valid rows were more than 500 m from a road. Report how many rows the enrichment step kept.
 - **Kaggle's delivery points look generated or shifted.** In 41,513 of 41,944 rows with usable coordinate pairs, the delivery point was offset by nearly the same positive amount in latitude and longitude. OSRM measures a mapped route between those points. The source does not establish how the locations or delivery times were recorded.
-- **The training data and sample restaurants are in different places.** The dataset covers Indian cities, while the sample catalog is in Phnom Penh. Treat Phnom Penh predictions as unvalidated.
+- **The sample catalog uses Bengaluru restaurant coordinates from Zomato rows with usable routes.** Restaurant names, cuisines, and ratings are examples. Validation metrics cover the dataset's held-out orders across Indian cities.
 
 ## Changing the features
 

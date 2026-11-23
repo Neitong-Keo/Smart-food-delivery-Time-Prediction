@@ -14,11 +14,12 @@ interface PredictionResultProps {
   result: PredictionResponse;
   requestedAt: Date;
   route: RouteSummary;
+  timeZone?: string | null;
   saveState: "pending" | "saved" | "failed";
   onNewOrder: () => void;
 }
 
-export function PredictionResult({ result, requestedAt, route, saveState, onNewOrder }: PredictionResultProps) {
+export function PredictionResult({ result, requestedAt, route, timeZone, saveState, onNewOrder }: PredictionResultProps) {
   const container = useRef<HTMLElement | null>(null);
   const minutes = result.predicted_delivery_time_minutes;
   const arrival = new Date(requestedAt.getTime() + minutes * 60_000);
@@ -40,7 +41,7 @@ export function PredictionResult({ result, requestedAt, route, saveState, onNewO
           {minutes}
           <span>{minutes === 1 ? "minute" : "minutes"}</span>
         </p>
-        <p className="result-arrival">Arriving around {formatClock(arrival)}</p>
+        <p className="result-arrival">Arriving around {formatClock(arrival, timeZone)}</p>
 
         {result.model_status === "demo" ? (
           <p className="result-status">

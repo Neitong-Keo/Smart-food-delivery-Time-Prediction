@@ -34,15 +34,15 @@ LIMITS = load_serving_limits()
 
 PAYLOAD = {
     "restaurant_id": "restaurant_001",
-    "restaurant_latitude": 11.5615,
-    "restaurant_longitude": 104.9285,
-    "delivery_latitude": 11.5721,
-    "delivery_longitude": 104.9115,
+    "restaurant_latitude": 12.972532,
+    "restaurant_longitude": 77.608179,
+    "delivery_latitude": 12.992532,
+    "delivery_longitude": 77.628179,
     "road_distance_km": 3.5,
     "route_duration_minutes": 12,
     "order_type": "snack",
     "is_festival": True,
-    "order_placed_at": "2026-11-20T19:30:00+07:00",
+    "order_placed_at": "2026-11-20T19:30:00+05:30",
 }
 
 
@@ -305,10 +305,12 @@ def test_model_input_matches_the_configured_features() -> None:
     assert model_input["order_day_of_week"] == 4
 
 
-def test_order_hour_uses_the_local_clock_of_the_request() -> None:
-    placed_at = datetime(2026, 11, 20, 23, 30, tzinfo=timezone(timedelta(hours=7)))
+def test_order_clock_uses_the_restaurant_time_zone() -> None:
+    placed_at = datetime(2026, 11, 21, 1, 15, tzinfo=timezone(timedelta(hours=7)))
 
-    assert features_for(order_placed_at=placed_at.isoformat()).order_hour == 23
+    features = features_for(order_placed_at=placed_at.isoformat())
+    assert features.order_hour == 23
+    assert features.order_day_of_week == 4
 
 
 def test_order_hours_match_the_cleaned_dataset() -> None:

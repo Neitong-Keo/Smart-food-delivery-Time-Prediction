@@ -15,8 +15,9 @@ def test_lists_restaurants_with_coordinates_and_filters() -> None:
     body = response.json()
     assert body["data_source"] == "sample"
     assert body["total"] == len(body["items"]) > 0
-    assert "Khmer" in body["cuisines"]
-    assert all(-90 <= item["latitude"] <= 90 for item in body["items"])
+    assert "Indian" in body["cuisines"]
+    assert all(item["address"].endswith("Bengaluru, India") for item in body["items"])
+    assert all(item["time_zone"] == "Asia/Kolkata" for item in body["items"])
     assert len({item["id"] for item in body["items"]}) == body["total"]
 
 
@@ -40,7 +41,9 @@ def test_gets_one_restaurant() -> None:
     response = client.get("/api/restaurants/restaurant_001")
 
     assert response.status_code == 200
-    assert response.json()["name"] == "Lok Lak Corner"
+    restaurant = response.json()
+    assert restaurant["name"] == "Brigade Grill"
+    assert (restaurant["latitude"], restaurant["longitude"]) == (12.972532, 77.608179)
 
 
 def test_unknown_restaurant_returns_404() -> None:

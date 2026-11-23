@@ -72,7 +72,7 @@ Press `Ctrl+C` in each terminal to stop the app.
 | Model input | Where it comes from |
 | --- | --- |
 | Road distance | Actual route from the restaurant to the customer, from OSRM |
-| Order hour and weekday | The customer's local time when they predict |
+| Order hour and weekday | The restaurant's local time when the order is placed |
 | Order type | Meal, snack, drinks, or buffet |
 | Festival | Checkbox on the prediction page |
 | Area type | Metropolitan, urban, or semi-urban, stored on the restaurant |
@@ -177,7 +177,7 @@ The map services are free, need no accounts, and are shared public servers with 
 | [GET /api/model](http://localhost:8600/api/model) | Active predictor, input columns, limits, and metrics |
 | [GET /docs](http://localhost:8600/docs) | Interactive API documentation |
 
-Restaurants are a fictional sample in [`sample_restaurants.json`](apps/backend/app/data/sample_restaurants.json). To use a database, implement `RestaurantRepository` in [`restaurants.py`](apps/backend/app/repositories/restaurants.py). History is stored in the browser behind [`PredictionHistoryRepository`](apps/web/src/services/history/history.repository.ts).
+The [sample restaurants](apps/backend/app/data/sample_restaurants.json) use Bengaluru coordinates from the Zomato dataset with fictional names and ratings. To use a database, implement `RestaurantRepository` in [`restaurants.py`](apps/backend/app/repositories/restaurants.py). History is stored in the browser behind [`PredictionHistoryRepository`](apps/web/src/services/history/history.repository.ts).
 
 ## Run with Docker Compose
 

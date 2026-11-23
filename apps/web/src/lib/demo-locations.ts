@@ -2,10 +2,10 @@ import type { LatLng } from "@/types/location";
 
 /** Sample drop-off areas offered only when the map cannot load. */
 export const DEMO_DELIVERY_AREAS: ReadonlyArray<LatLng & { id: string; name: string }> = [
-  { id: "central-market", name: "Central Market, Daun Penh", lat: 11.5696, lng: 104.9211 },
-  { id: "independence", name: "Independence Monument", lat: 11.5564, lng: 104.9282 },
-  { id: "russian-market", name: "Russian Market, Toul Tom Poung", lat: 11.5395, lng: 104.9165 },
-  { id: "toul-kork", name: "Toul Kork", lat: 11.5812, lng: 104.9023 },
-  { id: "chroy-changvar", name: "Chroy Changvar", lat: 11.5986, lng: 104.9362 },
-  { id: "sen-sok", name: "Sen Sok", lat: 11.5902, lng: 104.8815 },
+  { id: "dataset-drop-off", name: "Bengaluru dataset drop-off", lat: 12.992532, lng: 77.628179 },
+  { id: "cubbon-park", name: "Cubbon Park", lat: 12.97575, lng: 77.59265 },
+  { id: "indiranagar", name: "Indiranagar", lat: 12.97832, lng: 77.64081 },
+  { id: "koramangala", name: "Koramangala", lat: 12.93519, lng: 77.62448 },
+  { id: "jayanagar", name: "Jayanagar", lat: 12.92953, lng: 77.58334 },
+  { id: "malleshwaram", name: "Malleshwaram", lat: 13.00384, lng: 77.57122 },
 ];

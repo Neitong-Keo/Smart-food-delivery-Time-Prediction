@@ -8,6 +8,7 @@ export interface Restaurant {
   rating: number | null;
   image_url: string | null;
   city_type: string;
+  time_zone?: string | null;
 }
 
 export interface RestaurantListResponse {

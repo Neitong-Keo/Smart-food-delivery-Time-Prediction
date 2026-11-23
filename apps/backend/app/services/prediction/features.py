@@ -7,6 +7,7 @@ service. It is never derived from a straight line.
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from app.schemas.prediction import OrderType, PredictionRequest
 from app.schemas.restaurant import CityType, Restaurant
@@ -61,6 +62,8 @@ def build_delivery_features(
 ) -> DeliveryFeatures:
     """Combine a request with stored restaurant data."""
     placed_at = request.order_placed_at or now or datetime.now(timezone.utc)
+    if restaurant.time_zone and placed_at.utcoffset() is not None:
+        placed_at = placed_at.astimezone(ZoneInfo(restaurant.time_zone))
     return DeliveryFeatures(
         order_type=request.order_type,
         is_festival=request.is_festival,

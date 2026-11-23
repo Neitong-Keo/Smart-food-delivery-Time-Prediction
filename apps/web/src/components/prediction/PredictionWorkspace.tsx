@@ -144,6 +144,7 @@ export function PredictionWorkspace() {
           result={state.result}
           requestedAt={state.requestedAt}
           route={route}
+          timeZone={restaurant.time_zone}
           saveState={saveState}
           onNewOrder={startNewOrder}
         />
