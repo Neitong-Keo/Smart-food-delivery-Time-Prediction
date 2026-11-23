@@ -5,8 +5,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt model-constraints.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -c model-constraints.txt
 
 COPY app ./app
 COPY ml ./ml

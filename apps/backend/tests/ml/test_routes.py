@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from ml import routes
+from ml.route_table import fetch_route_table, group_table_pairs
 from ml.routes import RouteServiceError, enrich_records, fetch_route
 
 PAIR = (11.0, 76.0, 11.05, 76.05)
@@ -138,3 +139,24 @@ def test_fetch_route_rejects_a_point_far_from_any_road(monkeypatch) -> None:
     serve(monkeypatch, osrm_payload([osrm_route(5_000, 300)], snap=900))
 
     assert fetch_route("http://osrm", PAIR, 500) is None
+
+
+def test_route_table_returns_only_requested_pairs_in_kilometers(monkeypatch) -> None:
+    second = (11.02, 76.0, 11.08, 76.06)
+    serve(monkeypatch, {
+        "code": "Ok",
+        "distances": [[7800, 11200], [6400, 8900]],
+        "durations": [[600, 720], [540, 660]],
+        "sources": [{"distance": 5}, {"distance": 12}],
+        "destinations": [{"distance": 80}, {"distance": 501}],
+    })
+    assert fetch_route_table("http://osrm", [PAIR, second], 500, 0) == {
+        routes._key(PAIR): [7.8, 10.0],
+        routes._key(second): None,
+    }
+
+
+def test_route_tables_limit_origins_and_keep_regions_separate() -> None:
+    nearby = [(11.0 + i / 100, 76.0, 11.05, 76.05) for i in range(6)]
+    far = (19.0, 72.0, 19.05, 72.05)
+    assert list(group_table_pairs([*nearby, far])) == [nearby[:5], nearby[5:], [far]]

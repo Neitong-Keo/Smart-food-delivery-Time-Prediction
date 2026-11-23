@@ -138,7 +138,7 @@ export function RestaurantBrowser() {
 
         {data?.data_source === "sample" && (
           <p className="browse-source">
-            These are sample restaurants for this demo. Names, ratings, and addresses are fictional.
+            Restaurant pins come from the Bengaluru training data. Names and ratings are examples.
           </p>
         )}
       </div>

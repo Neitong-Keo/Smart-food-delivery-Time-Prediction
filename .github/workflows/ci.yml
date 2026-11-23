@@ -55,3 +55,33 @@ jobs:
         run: npm run typecheck
       - name: Build Next.js
         run: npm run build
+
+  deploy:
+    name: Deploy to VPS
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: smart-food-delivery-vps
+      cancel-in-progress: false
+    steps:
+      - name: Deploy the tested commit
+        env:
+          DEPLOY_HOST: ${{ secrets.SMART_DELIVERY_HOST }}
+          DEPLOY_KEY: ${{ secrets.SMART_DELIVERY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.SMART_DELIVERY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_HOST:?Missing SMART_DELIVERY_HOST}"
+          : "${DEPLOY_KEY:?Missing SMART_DELIVERY_SSH_KEY}"
+          : "${DEPLOY_KNOWN_HOSTS:?Missing SMART_DELIVERY_KNOWN_HOSTS}"
+          ssh_dir=$(mktemp -d)
+          trap 'rm -rf -- "$ssh_dir"' EXIT
+          chmod 700 "$ssh_dir"
+          printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > "$ssh_dir/key"
+          chmod 600 "$ssh_dir/key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" | tr -d '\r' > "$ssh_dir/known_hosts"
+          ssh -T -i "$ssh_dir/key" -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o ConnectTimeout=15 -o ServerAliveInterval=15 -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$ssh_dir/known_hosts" "root@$DEPLOY_HOST" "$GITHUB_SHA"

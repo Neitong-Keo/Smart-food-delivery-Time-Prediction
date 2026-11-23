@@ -1,0 +1,11 @@
+[Unit]
+Description=Renew the Smart Food Delivery certificate
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+# A separate certbot configuration keeps the shared stack's renewal hooks,
+# which stop its nginx, from running for this certificate.
+ExecStart=/usr/bin/certbot renew --quiet --config-dir /opt/smart-food-delivery/letsencrypt --work-dir /opt/smart-food-delivery/letsencrypt/work --logs-dir /opt/smart-food-delivery/letsencrypt/logs
+ExecStart=/opt/smart-food-delivery/ingress-sync.sh

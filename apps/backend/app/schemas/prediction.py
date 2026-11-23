@@ -29,7 +29,7 @@ class PredictionRequest(BaseModel):
     is_festival: bool = False
     order_placed_at: AwareDatetime | None = Field(
         default=None,
-        description="Order time with its UTC offset. The local clock supplies order_hour.",
+        description="Order time with its UTC offset. The restaurant's local clock supplies order_hour.",
     )
 
     @model_validator(mode="after")

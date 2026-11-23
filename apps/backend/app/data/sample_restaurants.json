@@ -1,145 +1,158 @@
 [
   {
     "id": "restaurant_001",
-    "name": "Lok Lak Corner",
-    "address": "St. 240, Daun Penh, Phnom Penh",
-    "latitude": 11.5615,
-    "longitude": 104.9285,
-    "cuisine": "Khmer",
+    "name": "Brigade Grill",
+    "address": "Residency Road, Ashok Nagar, Bengaluru, India",
+    "latitude": 12.972532,
+    "longitude": 77.608179,
+    "cuisine": "Grill",
     "rating": 4.7,
     "image_url": "/images/restaurants/beef-lok-lak.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_002",
-    "name": "Kampot Pepper Kitchen",
-    "address": "St. 278, Boeung Keng Kang 1, Phnom Penh",
-    "latitude": 11.554,
-    "longitude": 104.923,
-    "cuisine": "Khmer",
+    "name": "Basil Kitchen",
+    "address": "Koramangala 6th Block, Bengaluru, India",
+    "latitude": 12.939496,
+    "longitude": 77.625999,
+    "cuisine": "Thai",
     "rating": 4.5,
     "image_url": "/images/restaurants/basil-chicken.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_003",
     "name": "Hinoki Ramen",
-    "address": "St. 63, Boeung Keng Kang 3, Phnom Penh",
-    "latitude": 11.546,
-    "longitude": 104.922,
+    "address": "J.P. Nagar, Bengaluru, India",
+    "latitude": 12.906229,
+    "longitude": 77.596791,
     "cuisine": "Japanese",
     "rating": 4.6,
     "image_url": "/images/restaurants/ramen.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_004",
-    "name": "Koh Pich Sushi Bar",
-    "address": "Diamond Island, Tonle Bassac, Phnom Penh",
-    "latitude": 11.545,
-    "longitude": 104.94,
+    "name": "Indiranagar Sushi Bar",
+    "address": "100 Feet Road, Indiranagar, Bengaluru, India",
+    "latitude": 12.979166,
+    "longitude": 77.640709,
     "cuisine": "Japanese",
     "rating": 4.4,
     "image_url": "/images/restaurants/sushi.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_005",
     "name": "Soi Seven Thai",
-    "address": "St. 155, Toul Tom Poung, Phnom Penh",
-    "latitude": 11.539,
-    "longitude": 104.918,
+    "address": "Koramangala 5th Block, Bengaluru, India",
+    "latitude": 12.934179,
+    "longitude": 77.615797,
     "cuisine": "Thai",
     "rating": 4.3,
     "image_url": "/images/restaurants/pad-thai.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_006",
-    "name": "Mekong Wok Room",
-    "address": "Sisowath Quay, Daun Penh, Phnom Penh",
-    "latitude": 11.57,
-    "longitude": 104.928,
+    "name": "Binnamangala Wok Room",
+    "address": "Old Binnamangala, Indiranagar, Bengaluru, India",
+    "latitude": 12.98041,
+    "longitude": 77.640489,
     "cuisine": "Asian noodles",
     "rating": 4.2,
     "image_url": "/images/restaurants/stir-fried-noodles.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_007",
     "name": "Saffron Table",
-    "address": "St. 310, Tonle Bassac, Phnom Penh",
-    "latitude": 11.5495,
-    "longitude": 104.9305,
+    "address": "Vittal Mallya Road, Bengaluru, India",
+    "latitude": 12.972161,
+    "longitude": 77.596014,
     "cuisine": "Indian",
     "rating": 4.6,
     "image_url": "/images/restaurants/curry.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_008",
-    "name": "Forno Riverside",
-    "address": "St. 136, Phsar Kandal, Phnom Penh",
-    "latitude": 11.5695,
-    "longitude": 104.9255,
+    "name": "Forno Pizza House",
+    "address": "Kadubeesanahalli, Bengaluru, India",
+    "latitude": 12.949934,
+    "longitude": 77.699386,
     "cuisine": "Italian",
     "rating": 4.4,
     "image_url": "/images/restaurants/pizza.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_009",
     "name": "Double Stack Burgers",
-    "address": "Russian Blvd, Toul Kork, Phnom Penh",
-    "latitude": 11.578,
-    "longitude": 104.899,
+    "address": "Sarjapur Road, Bengaluru, India",
+    "latitude": 12.913041,
+    "longitude": 77.683237,
     "cuisine": "Burgers",
     "rating": 4.1,
     "image_url": "/images/restaurants/burger.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_010",
     "name": "Ember Grill House",
-    "address": "Sihanouk Blvd, Olympic, Phnom Penh",
-    "latitude": 11.558,
-    "longitude": 104.912,
+    "address": "Jyoti Nivas College Road, Koramangala, Bengaluru, India",
+    "latitude": 12.933298,
+    "longitude": 77.614293,
     "cuisine": "Grill",
     "rating": 4.5,
     "image_url": "/images/restaurants/grill.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_011",
     "name": "Green Bowl Pantry",
-    "address": "St. 21, Tonle Bassac, Phnom Penh",
-    "latitude": 11.5525,
-    "longitude": 104.9325,
+    "address": "Ambalipura, Bengaluru, India",
+    "latitude": 12.914264,
+    "longitude": 77.6784,
     "cuisine": "Healthy",
     "rating": null,
     "image_url": "/images/restaurants/salad-bowl.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_012",
     "name": "Daybreak Coffee",
-    "address": "National Road 6, Chroy Changvar, Phnom Penh",
-    "latitude": 11.593,
-    "longitude": 104.934,
+    "address": "New BEL Road, Bengaluru, India",
+    "latitude": 13.029198,
+    "longitude": 77.570997,
     "cuisine": "Cafe",
     "rating": 4.3,
     "image_url": "/images/restaurants/coffee.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   },
   {
     "id": "restaurant_013",
     "name": "Sugar Ring Bakery",
-    "address": "St. 2004, Sen Sok, Phnom Penh",
-    "latitude": 11.587,
-    "longitude": 104.876,
+    "address": "Doddanekundi, Bengaluru, India",
+    "latitude": 12.975377,
+    "longitude": 77.696664,
     "cuisine": "Desserts",
     "rating": null,
     "image_url": "/images/restaurants/donuts.jpg",
-    "city_type": "Metropolitan"
+    "city_type": "Metropolitan",
+    "time_zone": "Asia/Kolkata"
   }
 ]

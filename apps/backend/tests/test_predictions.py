@@ -26,6 +26,7 @@ from app.services.prediction.demo import DEMO_BASE_MINUTES, DEMO_MINUTES_PER_ROA
 from app.services.prediction.features import SUPPORTED_MODEL_COLUMNS
 from ml import DEFAULT_DATASET_CONFIG_PATH
 from ml.manifest import load_dataset_config, resolve_dataset_paths
+from ml.train import split_chronologically
 
 
 client = TestClient(create_app())
@@ -33,15 +34,15 @@ LIMITS = load_serving_limits()
 
 PAYLOAD = {
     "restaurant_id": "restaurant_001",
-    "restaurant_latitude": 11.5615,
-    "restaurant_longitude": 104.9285,
-    "delivery_latitude": 11.5721,
-    "delivery_longitude": 104.9115,
+    "restaurant_latitude": 12.972532,
+    "restaurant_longitude": 77.608179,
+    "delivery_latitude": 12.992532,
+    "delivery_longitude": 77.628179,
     "road_distance_km": 3.5,
     "route_duration_minutes": 12,
     "order_type": "snack",
     "is_festival": True,
-    "order_placed_at": "2026-11-20T19:30:00+07:00",
+    "order_placed_at": "2026-11-20T19:30:00+05:30",
 }
 
 
@@ -304,10 +305,12 @@ def test_model_input_matches_the_configured_features() -> None:
     assert model_input["order_day_of_week"] == 4
 
 
-def test_order_hour_uses_the_local_clock_of_the_request() -> None:
-    placed_at = datetime(2026, 11, 20, 23, 30, tzinfo=timezone(timedelta(hours=7)))
+def test_order_clock_uses_the_restaurant_time_zone() -> None:
+    placed_at = datetime(2026, 11, 21, 1, 15, tzinfo=timezone(timedelta(hours=7)))
 
-    assert features_for(order_placed_at=placed_at.isoformat()).order_hour == 23
+    features = features_for(order_placed_at=placed_at.isoformat())
+    assert features.order_hour == 23
+    assert features.order_day_of_week == 4
 
 
 def test_order_hours_match_the_cleaned_dataset() -> None:
@@ -322,13 +325,16 @@ def test_order_hours_match_the_cleaned_dataset() -> None:
 
 
 def test_road_distance_limits_match_the_enriched_dataset() -> None:
-    """Runs once ml.scripts.enrich_routes has produced the training file."""
+    """Verify the published limits against the orders used to fit the final model."""
     config = load_dataset_config(DEFAULT_DATASET_CONFIG_PATH)
     path = resolve_dataset_paths().base_dir / config["paths"]["routed_parquet"]
     if not path.is_file():
         pytest.skip("Route-enriched dataset not present.")
 
-    distances = pd.read_parquet(path, columns=["road_distance_km"])["road_distance_km"]
+    records = pd.read_parquet(path, columns=["road_distance_km", "order_timestamp"])
+    in_range = records["road_distance_km"].between(LIMITS.blocked_min_km, LIMITS.blocked_max_km)
+    split = split_chronologically(records.loc[in_range])
+    distances = pd.concat([split.train["road_distance_km"], split.validation["road_distance_km"]])
 
     assert distances.min() == pytest.approx(LIMITS.training_min_km, abs=0.01)
     assert distances.max() == pytest.approx(LIMITS.training_max_km, abs=0.01)

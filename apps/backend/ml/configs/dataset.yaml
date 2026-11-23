@@ -76,9 +76,8 @@ serving:
     - order_hour
     - order_day_of_week
     - road_distance_km
-  # Provisional: OSRM road distances from 42 Kaggle preview rows.
-  # Replace with the full range printed by ml.scripts.enrich_routes.
-  training_road_distance_km: {min: 1.49, max: 31.79}
+  # Range of the orders used to fit the exported pipeline. See the training manifest.
+  training_road_distance_km: {min: 1.4858, max: 39.5105}
   # The API declines to predict outside these road distances.
   blocked_road_distance_km: {min: 0.1, max: 40}
   # A point farther than this from a road has no reliable road distance.

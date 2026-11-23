@@ -1,0 +1,9 @@
+[Unit]
+Description=Check the Smart Food Delivery virtual host every five minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

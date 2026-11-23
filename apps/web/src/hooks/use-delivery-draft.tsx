@@ -33,7 +33,7 @@ interface DeliveryDraftContextValue {
   resetDraft: () => void;
 }
 
-const STORAGE_KEY = "smart-delivery-draft-v2";
+const STORAGE_KEY = "smart-delivery-draft-v3";
 const EMPTY_DRAFT: DeliveryDraft = {
   restaurantId: null,
   location: null,

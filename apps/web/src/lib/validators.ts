@@ -30,7 +30,8 @@ export function parseRestaurant(value: unknown): Restaurant {
     !isValidLatLng({ lat: value.latitude, lng: value.longitude }) ||
     !isNullableString(value.cuisine) ||
     !(value.rating === null || isFiniteNumber(value.rating)) ||
-    !isNullableString(value.image_url)
+    !isNullableString(value.image_url) ||
+    !(value.time_zone === undefined || isNullableString(value.time_zone))
   ) {
     throw new Error("Invalid restaurant record.");
   }

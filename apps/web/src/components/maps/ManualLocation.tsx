@@ -57,7 +57,7 @@ export function ManualLocation({ onPick }: ManualLocationProps) {
               id="manual-lat"
               className="input"
               inputMode="decimal"
-              placeholder="11.5621"
+              placeholder="12.992532"
               value={latitude}
               onChange={(event) => setLatitude(event.target.value)}
             />
@@ -68,7 +68,7 @@ export function ManualLocation({ onPick }: ManualLocationProps) {
               id="manual-lng"
               className="input"
               inputMode="decimal"
-              placeholder="104.9315"
+              placeholder="77.628179"
               value={longitude}
               onChange={(event) => setLongitude(event.target.value)}
             />
