@@ -10,6 +10,8 @@ base_dir: ".."
 paths:
   raw_csv: "data/raw/dataset.csv"
   processed_parquet: "data/processed/dataset.parquet"
+  routed_parquet: "data/processed/dataset_with_routes.parquet"
+  route_cache: "data/processed/route_cache.json"
   dataset_manifest: "data/manifests/dataset.json"
   artifacts_dir: "artifacts/v1"
   model_artifact: "artifacts/v1/model.joblib"
@@ -62,4 +64,25 @@ quality:
     Delivery_person_Ratings: {min: 1, max: 5, integer: false}
     Vehicle_condition: {min: 0, max: 3, integer: true}
     multiple_deliveries: {min: 0, max: 3, integer: true}
+
+# Live prediction settings. Data cleaning and the median baseline do not read this section.
+serving:
+  # Columns the trained model receives. road_distance_km is the actual distance
+  # along the road, added to the training data by `python -m ml.scripts.enrich_routes`.
+  model_features:
+    - Type_of_order
+    - Festival
+    - City
+    - order_hour
+    - order_day_of_week
+    - road_distance_km
+  # Provisional: OSRM road distances from 42 Kaggle preview rows.
+  # Replace with the full range printed by ml.scripts.enrich_routes.
+  training_road_distance_km: {min: 1.49, max: 31.79}
+  # The API declines to predict outside these road distances.
+  blocked_road_distance_km: {min: 0.1, max: 40}
+  # A point farther than this from a road has no reliable road distance.
+  max_point_to_road_m: 500
+  # Order hours seen in the data. Confirm against the full Parquet with pytest.
+  supported_order_hours: [0, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
 

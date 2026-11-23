@@ -223,6 +223,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Node.js / Next.js (apps/web)
+# The Python template above ignores every lib/ directory.
+!apps/web/src/lib/
 node_modules/
 .next/
 out/

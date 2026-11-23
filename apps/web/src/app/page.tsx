@@ -1,180 +1,117 @@
-"use client";
-
+import { CalendarClock, Route, Timer } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
-import { ApiStatus } from "@/components/ApiStatus";
-import { Tour } from "@/features/onboarding/Tour";
-import {
-  DEFAULT_ROUTE_SCENARIO,
-  SAMPLE_ROUTE_SCENARIOS,
-  type TrafficLevel,
-  type WeatherCondition,
-  estimateIllustrativeEta,
-} from "@/features/onboarding/roadKit";
+import { HeroRoute } from "@/components/home/HeroRoute";
+import { ModelModeNote } from "@/components/home/ModelModeNote";
+
+const STEPS = [
+  {
+    title: "Choose a restaurant",
+    body: "Browse by name or cuisine. Each restaurant's location is already saved, so there's nothing to look up.",
+  },
+  {
+    title: "Set your delivery location",
+    body: "Search for an address, tap the map, or use your current location. Drag the pin until it's at your door.",
+  },
+  {
+    title: "Get your delivery time",
+    body: "Review the route on the map, then see how long your order should take from kitchen to door.",
+  },
+];
+
+const FACTORS = [
+  {
+    icon: Route,
+    title: "The road distance to your door",
+    body: "Your route is measured along actual streets, and that distance goes into the prediction.",
+  },
+  {
+    icon: CalendarClock,
+    title: "When and what you order",
+    body: "The prediction model also looks at the hour, day, order type, festivals, and area type.",
+  },
+  {
+    icon: Timer,
+    title: "Drive time, shown for reference",
+    body: "A drive estimate only covers the road. Your delivery time covers the whole order.",
+  },
+];
 
 export default function HomePage() {
-  const [selectedScenarioId, setSelectedScenarioId] = useState(DEFAULT_ROUTE_SCENARIO.id);
-  const [distanceKm, setDistanceKm] = useState<number>(DEFAULT_ROUTE_SCENARIO.distanceKm);
-  const [traffic, setTraffic] = useState<TrafficLevel>(DEFAULT_ROUTE_SCENARIO.traffic);
-  const [weather, setWeather] = useState<WeatherCondition>(DEFAULT_ROUTE_SCENARIO.weather);
-
-  const selectedScenario =
-    SAMPLE_ROUTE_SCENARIOS.find((scenario) => scenario.id === selectedScenarioId) ??
-    DEFAULT_ROUTE_SCENARIO;
-
-  const estimate = estimateIllustrativeEta(distanceKm, traffic, weather);
-  const distanceScale = distanceKm / selectedScenario.distanceKm;
-
-  const applyScenario = (scenarioId: string) => {
-    const match = SAMPLE_ROUTE_SCENARIOS.find((item) => item.id === scenarioId);
-    if (!match) {
-      return;
-    }
-
-    setSelectedScenarioId(match.id);
-    setDistanceKm(match.distanceKm);
-    setTraffic(match.traffic);
-    setWeather(match.weather);
-  };
-
   return (
     <>
-      <section id="hero-section" className="hero">
-        <h1 className="hero-title">
-          How long will delivery take?
-        </h1>
-        <p className="hero-description">
-          Estimate food delivery time in minutes based on route distance, traffic, and weather.
-        </p>
-
-        <div className="hero-actions">
-          <Link href="/predict" className="button button-primary">
-            Estimate delivery time
-          </Link>
-          <Tour />
+      <section className="home-hero" aria-labelledby="home-title">
+        <div className="home-hero-copy">
+          <h1 id="home-title" className="home-title">
+            Know when your food will arrive
+          </h1>
+          <p className="home-lede">
+            Pick a restaurant, drop a pin at your door, and get a delivery time based on the road
+            distance and your order.
+          </p>
+          <div className="home-actions">
+            <Link href="/restaurants" className="button button-primary button-lg">
+              Predict delivery time
+            </Link>
+            <a href="#how-it-works" className="button button-secondary button-lg">
+              See how it works
+            </a>
+          </div>
+          <ModelModeNote />
         </div>
+        <HeroRoute />
       </section>
 
-      <section
-        id="route-preview-card"
-        className="card route-card"
-        aria-labelledby="route-preview-title"
-      >
-        <div className="route-header">
-          <div>
-            <h2 id="route-preview-title" className="card-title">Sample route explorer</h2>
-            <p className="muted-text">Change the route conditions to see how the estimate responds.</p>
-          </div>
-        </div>
-
-        <div className="scenario-tabs" role="group" aria-label="Sample route presets">
-          {SAMPLE_ROUTE_SCENARIOS.map((scenario) => (
-            <button
-              key={scenario.id}
-              type="button"
-              className={`pill-button ${
-                scenario.id === selectedScenario.id ? "pill-button-active" : ""
-              }`}
-              aria-pressed={scenario.id === selectedScenario.id}
-              onClick={() => applyScenario(scenario.id)}
-            >
-              {scenario.name}
-            </button>
-          ))}
-        </div>
-
-        <div className="route-grid">
-          <div className="controls-column">
-            <div className="field-group">
-              <label htmlFor="distance-slider" className="field-label">
-                Route distance <strong aria-hidden="true">{distanceKm.toFixed(1)} km</strong>
-              </label>
-              <input
-                id="distance-slider"
-                type="range"
-                min={1}
-                max={18}
-                step={0.1}
-                value={distanceKm}
-                aria-valuetext={`${distanceKm.toFixed(1)} kilometers`}
-                onChange={(event) => setDistanceKm(Number(event.target.value))}
-              />
-            </div>
-
-            <div className="field-group">
-              <label htmlFor="traffic-select" className="field-label">
-                Traffic level
-              </label>
-              <select
-                id="traffic-select"
-                className="select-input"
-                value={traffic}
-                onChange={(event) => setTraffic(event.target.value as TrafficLevel)}
-              >
-                <option value="light">Light traffic</option>
-                <option value="moderate">Moderate congestion</option>
-                <option value="heavy">Heavy rush-hour traffic</option>
-              </select>
-            </div>
-
-            <div className="field-group">
-              <label htmlFor="weather-select" className="field-label">
-                Weather condition
-              </label>
-              <select
-                id="weather-select"
-                className="select-input"
-                value={weather}
-                onChange={(event) => setWeather(event.target.value as WeatherCondition)}
-              >
-                <option value="clear">Clear skies</option>
-                <option value="rain">Rain</option>
-                <option value="storm">Heavy storm</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="eta-panel">
-            <p className="eyebrow">Illustrative estimate</p>
-            <p className="eta-value" aria-live="polite">{estimate.totalMinutes} minutes</p>
-            <p className="muted-text">Includes sample kitchen prep and travel time.</p>
-
-            <dl className="breakdown-list">
-              <div className="breakdown-row">
-                <dt>Kitchen prep (sample)</dt>
-                <dd>{estimate.prepMinutes} min</dd>
-              </div>
-              <div className="breakdown-row">
-                <dt>Base distance travel</dt>
-                <dd>{estimate.baseTravelMinutes} min</dd>
-              </div>
-              <div className="breakdown-row">
-                <dt>Traffic impact ({traffic})</dt>
-                <dd>+{estimate.trafficPenaltyMinutes} min</dd>
-              </div>
-              <div className="breakdown-row">
-                <dt>Weather impact ({weather})</dt>
-                <dd>+{estimate.weatherPenaltyMinutes} min</dd>
-              </div>
-            </dl>
-          </div>
-
-          <ol className="waypoint-list" aria-label="Sample route waypoints">
-            {selectedScenario.waypoints.map((waypoint) => (
-              <li key={waypoint.id} className="waypoint-item">
-                <span className="waypoint-role">{waypoint.role}</span>
-                <span>{waypoint.label}</span>
-                <span className="waypoint-km">
-                  {(waypoint.distanceFromStartKm * distanceScale).toFixed(1)} km
+      <section id="how-it-works" className="home-section" aria-labelledby="how-title">
+        <div className="container how-grid">
+          <h2 id="how-title" className="home-section-title">
+            Three steps from craving to arrival time
+          </h2>
+          <ol className="how-steps">
+            {STEPS.map((step, index) => (
+              <li key={step.title} className="how-step">
+                <span className="how-step-number" aria-hidden="true">
+                  {index + 1}
                 </span>
+                <div>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </div>
               </li>
             ))}
           </ol>
         </div>
       </section>
 
-      <ApiStatus />
+      <section className="home-section factors" aria-labelledby="factors-title">
+        <div className="container factors-grid">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="factors-photo"
+            src="/images/restaurants/basil-chicken.jpg"
+            alt="A bowl of stir-fried chicken with fresh basil"
+            width={800}
+            height={600}
+            loading="lazy"
+          />
+          <div>
+            <h2 id="factors-title" className="home-section-title">
+              What shapes your estimate
+            </h2>
+            <ul className="factor-list">
+              {FACTORS.map(({ icon: Icon, title, body }) => (
+                <li key={title} className="factor">
+                  <Icon size={20} aria-hidden />
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
     </>
   );
 }

@@ -19,7 +19,7 @@ export const ONBOARDING_STEPS: TourStep[] = [
     description:
       "Smart Food Delivery Time Prediction estimates total door-to-door delivery duration in minutes using route distance, traffic, and weather conditions.",
     targetId: "hero-section",
-    highlightSummary: "Open Estimate for live prediction availability or Model Insights for evaluation results.",
+    highlightSummary: "Open Restaurants to start an order, or Model to check the status of the trained model.",
   },
   {
     id: "api-health",
@@ -43,7 +43,7 @@ export const ONBOARDING_STEPS: TourStep[] = [
     description:
       "Use the theme button in the header to switch between light and dark mode.",
     targetId: "theme-toggle-control",
-    highlightSummary: "Select Finish to return to the landing page and try the sample route.",
+    highlightSummary: "Select Finish to close the tour and try the sample route.",
   },
 ];
 

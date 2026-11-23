@@ -1,0 +1,145 @@
+[
+  {
+    "id": "restaurant_001",
+    "name": "Lok Lak Corner",
+    "address": "St. 240, Daun Penh, Phnom Penh",
+    "latitude": 11.5615,
+    "longitude": 104.9285,
+    "cuisine": "Khmer",
+    "rating": 4.7,
+    "image_url": "/images/restaurants/beef-lok-lak.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_002",
+    "name": "Kampot Pepper Kitchen",
+    "address": "St. 278, Boeung Keng Kang 1, Phnom Penh",
+    "latitude": 11.554,
+    "longitude": 104.923,
+    "cuisine": "Khmer",
+    "rating": 4.5,
+    "image_url": "/images/restaurants/basil-chicken.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_003",
+    "name": "Hinoki Ramen",
+    "address": "St. 63, Boeung Keng Kang 3, Phnom Penh",
+    "latitude": 11.546,
+    "longitude": 104.922,
+    "cuisine": "Japanese",
+    "rating": 4.6,
+    "image_url": "/images/restaurants/ramen.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_004",
+    "name": "Koh Pich Sushi Bar",
+    "address": "Diamond Island, Tonle Bassac, Phnom Penh",
+    "latitude": 11.545,
+    "longitude": 104.94,
+    "cuisine": "Japanese",
+    "rating": 4.4,
+    "image_url": "/images/restaurants/sushi.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_005",
+    "name": "Soi Seven Thai",
+    "address": "St. 155, Toul Tom Poung, Phnom Penh",
+    "latitude": 11.539,
+    "longitude": 104.918,
+    "cuisine": "Thai",
+    "rating": 4.3,
+    "image_url": "/images/restaurants/pad-thai.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_006",
+    "name": "Mekong Wok Room",
+    "address": "Sisowath Quay, Daun Penh, Phnom Penh",
+    "latitude": 11.57,
+    "longitude": 104.928,
+    "cuisine": "Asian noodles",
+    "rating": 4.2,
+    "image_url": "/images/restaurants/stir-fried-noodles.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_007",
+    "name": "Saffron Table",
+    "address": "St. 310, Tonle Bassac, Phnom Penh",
+    "latitude": 11.5495,
+    "longitude": 104.9305,
+    "cuisine": "Indian",
+    "rating": 4.6,
+    "image_url": "/images/restaurants/curry.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_008",
+    "name": "Forno Riverside",
+    "address": "St. 136, Phsar Kandal, Phnom Penh",
+    "latitude": 11.5695,
+    "longitude": 104.9255,
+    "cuisine": "Italian",
+    "rating": 4.4,
+    "image_url": "/images/restaurants/pizza.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_009",
+    "name": "Double Stack Burgers",
+    "address": "Russian Blvd, Toul Kork, Phnom Penh",
+    "latitude": 11.578,
+    "longitude": 104.899,
+    "cuisine": "Burgers",
+    "rating": 4.1,
+    "image_url": "/images/restaurants/burger.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_010",
+    "name": "Ember Grill House",
+    "address": "Sihanouk Blvd, Olympic, Phnom Penh",
+    "latitude": 11.558,
+    "longitude": 104.912,
+    "cuisine": "Grill",
+    "rating": 4.5,
+    "image_url": "/images/restaurants/grill.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_011",
+    "name": "Green Bowl Pantry",
+    "address": "St. 21, Tonle Bassac, Phnom Penh",
+    "latitude": 11.5525,
+    "longitude": 104.9325,
+    "cuisine": "Healthy",
+    "rating": null,
+    "image_url": "/images/restaurants/salad-bowl.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_012",
+    "name": "Daybreak Coffee",
+    "address": "National Road 6, Chroy Changvar, Phnom Penh",
+    "latitude": 11.593,
+    "longitude": 104.934,
+    "cuisine": "Cafe",
+    "rating": 4.3,
+    "image_url": "/images/restaurants/coffee.jpg",
+    "city_type": "Metropolitan"
+  },
+  {
+    "id": "restaurant_013",
+    "name": "Sugar Ring Bakery",
+    "address": "St. 2004, Sen Sok, Phnom Penh",
+    "latitude": 11.587,
+    "longitude": 104.876,
+    "cuisine": "Desserts",
+    "rating": null,
+    "image_url": "/images/restaurants/donuts.jpg",
+    "city_type": "Metropolitan"
+  }
+]

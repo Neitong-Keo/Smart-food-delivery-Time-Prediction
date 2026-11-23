@@ -1,21 +1,9 @@
 import type { Metadata } from "next";
 
-import { ApiStatus } from "@/components/ApiStatus";
-import { PredictionAvailability } from "@/features/prediction/PredictionAvailability";
+import { PredictionWorkspace } from "@/components/prediction/PredictionWorkspace";
 
-export const metadata: Metadata = { title: "Estimate Delivery Time" };
+export const metadata: Metadata = { title: "Delivery Time" };
 
 export default function PredictPage() {
-  return (
-    <>
-      <section className="page-header">
-        <h1 className="page-title">Estimate delivery time</h1>
-      </section>
-
-      <PredictionAvailability />
-
-      <ApiStatus />
-    </>
-  );
+  return <PredictionWorkspace />;
 }
-

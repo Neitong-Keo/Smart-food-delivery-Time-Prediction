@@ -2,18 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { config } from "@/lib/config";
+
 type ConnectionState = "checking" | "online" | "offline";
 
-const DEFAULT_API_BASE_URL = "http://localhost:8600";
-
-function getApiBaseUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-  return (configured || DEFAULT_API_BASE_URL).replace(/\/+$/, "");
-}
-
 export function ApiStatus() {
-  const apiBaseUrl = getApiBaseUrl();
-  const healthUrl = `${apiBaseUrl}/api/health`;
+  const healthUrl = `${config.apiBaseUrl}/api/health`;
 
   const [status, setStatus] = useState<ConnectionState>("checking");
   const [detail, setDetail] = useState("Checking the delivery API…");
@@ -55,7 +49,7 @@ export function ApiStatus() {
     } catch {
       if (activeCheck.current !== controller) return;
       setStatus("offline");
-      setDetail("Unable to reach the delivery API. Select Recheck API to try again.");
+      setDetail(`The delivery API can't be reached at ${config.apiBaseUrl}.`);
     } finally {
       window.clearTimeout(timeoutId);
       if (activeCheck.current === controller) activeCheck.current = null;
@@ -74,27 +68,17 @@ export function ApiStatus() {
     status === "checking" ? "Checking" : status === "online" ? "Online" : "Offline";
 
   return (
-    <section id="api-status-card" className="card status-card" aria-label="Backend API status">
-      <div className="status-card-header">
-        <div>
-          <p className="eyebrow">Backend Connectivity</p>
-          <h2 className="card-title">FastAPI Health Check</h2>
-        </div>
+    <section id="api-status-card" className="status-panel" aria-label="Backend API status">
+      <div>
+        <h2>Delivery API</h2>
+        <p className="status-panel-copy">{detail}</p>
+      </div>
 
-        <span
-          className={`status-pill status-${status}`}
-          role="status"
-          aria-live="polite"
-        >
+      <div className="status-panel-actions">
+        <span className={`status-label status-${status}`} role="status" aria-live="polite">
           <span className="status-dot" aria-hidden="true" />
           {statusLabel}
         </span>
-      </div>
-
-      <p className="muted-text">{detail}</p>
-
-      <div className="status-meta">
-        <code className="code-chip">GET {healthUrl}</code>
         <button
           type="button"
           className="button button-secondary"
@@ -107,4 +91,3 @@ export function ApiStatus() {
     </section>
   );
 }
-
