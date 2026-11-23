@@ -30,6 +30,12 @@ services:
       INTERNAL_API_URL: http://api:8600
     ports:
       - ${WEB_BIND:-127.0.0.1}:${WEB_PORT:-38600}:3600
+    # The shared nginx reaches the web app over its ingress network. The API
+    # stays on the project's private network.
+    networks:
+      default: {}
+      ingress:
+        aliases: [smart-food-delivery-web]
     restart: unless-stopped
     mem_limit: 768m
     cap_drop: [ALL]
@@ -43,3 +49,8 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+
+networks:
+  ingress:
+    name: camcyber-ai-ingress
+    external: true

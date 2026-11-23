@@ -33,12 +33,8 @@ if [[ $head != "$revision" ]]; then
 fi
 
 export WEB_PORT=38600
-# Host address the web port binds to; override in deploy.env for the shared ingress.
+# Loopback only, for the smoke test; the public route is the shared nginx.
 export WEB_BIND=127.0.0.1
-if [[ -f $base/deploy.env ]]; then
-  # shellcheck source=/dev/null
-  source "$base/deploy.env"
-fi
 export SOURCE_DIR
 SOURCE_DIR=$(mktemp -d "$base/source.XXXXXXXX")
 trap 'rm -rf -- "$SOURCE_DIR"' EXIT
