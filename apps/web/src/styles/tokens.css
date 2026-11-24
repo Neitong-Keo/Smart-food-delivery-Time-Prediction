@@ -74,6 +74,19 @@
   --duration-fast: 140ms;
   --duration-base: 220ms;
 
+  /* Charts. Validated with the dataviz palette checks against the light surface (#ffffff):
+     all pairs pass CVD separation >= 8.9. Aqua sits below 3:1, so charts carry labels or a table. */
+  --series-1: #2a78d6;
+  --series-2: #d97a33;
+  --series-3: #1baf7a;
+  --series-negative: #e34948;
+  /* Ordered steps for training, validation and test. */
+  --ordinal-1: #86b6ef;
+  --ordinal-2: #2a78d6;
+  --ordinal-3: #184f95;
+  --chart-grid: #ebe8e2;
+  --chart-axis: #c9c3b9;
+
   color-scheme: light;
 }
 
@@ -106,5 +119,14 @@
   --map-park: #2d3227;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-md: 0 2px 4px rgb(0 0 0 / 0.2), 0 10px 24px rgb(0 0 0 / 0.3);
+  --series-1: #3987e5;
+  --series-2: #cf6a2a;
+  --series-3: #199e70;
+  --series-negative: #e66767;
+  --ordinal-1: #1c5cab;
+  --ordinal-2: #5598e7;
+  --ordinal-3: #9ec5f4;
+  --chart-grid: #34312d;
+  --chart-axis: #4f4a44;
   color-scheme: dark;
 }

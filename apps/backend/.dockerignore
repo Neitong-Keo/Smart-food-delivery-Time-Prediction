@@ -6,12 +6,15 @@ venv/
 .env
 .env.*
 
-# Exclude datasets, generated manifests, and model artifacts from Phase 1 image builds
+# The dataset table (GET /api/dataset) reads the source CSV and the prepared Parquet
+# files. Model artifacts stay out of the image and are mounted at runtime.
 ml/data/raw/*
+!ml/data/raw/*.csv
 ml/data/processed/*
+!ml/data/processed/*.parquet
 ml/data/manifests/*
+!ml/data/manifests/dataset.json
 ml/artifacts/*
 ml/experiments/*
 ml/notebooks/*
 tests/
-

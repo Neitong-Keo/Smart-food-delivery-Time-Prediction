@@ -6,25 +6,37 @@ import { useEffect, useRef } from "react";
 
 import { formatClock, formatMinutes } from "@/lib/format";
 import type { RouteSummary } from "@/types/location";
-import type { PredictionResponse } from "@/types/prediction";
-
-const STAGES = ["Order preparation", "Food pickup", "Delivery in progress", "Estimated arrival"];
+import type { ModelPrediction, PredictionComparison } from "@/types/prediction";
 
 interface PredictionResultProps {
-  result: PredictionResponse;
-  requestedAt: Date;
+  result: PredictionComparison;
+  /** The prediction to feature, from the model picker. */
+  shown: ModelPrediction;
+  /** When the order was placed, with its UTC offset. */
+  placedAt: string;
   route: RouteSummary;
   timeZone?: string | null;
   saveState: "pending" | "saved" | "failed";
   onNewOrder: () => void;
 }
 
-export function PredictionResult({ result, requestedAt, route, timeZone, saveState, onNewOrder }: PredictionResultProps) {
+const formatMae = (value: number | null) => (value === null ? "Not recorded" : `${value.toFixed(2)} min`);
+
+export function PredictionResult({
+  result,
+  shown,
+  placedAt,
+  route,
+  timeZone,
+  saveState,
+  onNewOrder,
+}: PredictionResultProps) {
   const container = useRef<HTMLElement | null>(null);
-  const minutes = result.predicted_delivery_time_minutes;
-  const arrival = new Date(requestedAt.getTime() + minutes * 60_000);
-  const driveMinutes = route.durationMinutes;
-  const scale = Math.max(minutes, driveMinutes ?? 0);
+  const minutes = shown.predicted_delivery_time_minutes;
+  const placed = new Date(placedAt);
+  const arrival = minutes !== null ? new Date(placed.getTime() + minutes * 60_000) : null;
+  const isDemo = result.model_status === "demo";
+  const comparable = result.predictions.length > 1;
 
   useEffect(() => {
     container.current?.focus({ preventScroll: true });
@@ -35,26 +47,33 @@ export function PredictionResult({ result, requestedAt, route, timeZone, saveSta
     <section ref={container} className="result" tabIndex={-1} aria-labelledby="result-heading">
       <div>
         <h2 id="result-heading" className="result-heading">
-          Your estimated delivery time
+          {comparable ? `${shown.model_name} predicts` : "Estimated delivery time"}
         </h2>
-        <p className="result-time">
-          {minutes}
-          <span>{minutes === 1 ? "minute" : "minutes"}</span>
-        </p>
-        <p className="result-arrival">Arriving around {formatClock(arrival, timeZone)}</p>
+        {minutes !== null ? (
+          <p className="result-time" aria-live="polite">
+            {minutes}
+            <span>{minutes === 1 ? "minute" : "minutes"}</span>
+          </p>
+        ) : (
+          <p className="result-arrival">{shown.detail ?? "This model couldn't predict this order."}</p>
+        )}
+        {arrival && (
+          <p className="result-arrival">
+            Ordered {formatClock(placed, timeZone)}, arriving around {formatClock(arrival, timeZone)}
+          </p>
+        )}
 
-        {result.model_status === "demo" ? (
+        {isDemo ? (
           <p className="result-status">
             <FlaskConical size={16} aria-hidden />
             <span>
-              <strong>Demo result.</strong> This time comes from a placeholder rule based on
-              distance, not a trained model.
+              <strong>Demo result.</strong> A placeholder rule based on distance, not a trained model.
             </span>
           </p>
         ) : (
           <p className="result-status result-status-live">
             <Sparkles size={16} aria-hidden />
-            <span>Predicted by the trained model.</span>
+            <span>Predicted by a trained model. Drive time without traffic: {formatMinutes(route.durationMinutes)}.</span>
           </p>
         )}
 
@@ -66,44 +85,44 @@ export function PredictionResult({ result, requestedAt, route, timeZone, saveSta
         ))}
       </div>
 
-      <div className="result-details">
-        <div>
-          <h3 className="compare-title">Delivery time and drive time</h3>
-          <dl className="compare">
-            <div className="compare-row">
-              <div className="compare-labels">
-                <dt>{result.model_status === "demo" ? "Demo delivery time" : "Predicted delivery time"}</dt>
-                <dd>{formatMinutes(minutes)}</dd>
-              </div>
-              <div className="compare-track" aria-hidden="true">
-                <span className="compare-fill compare-fill-total" style={{ width: `${(minutes / scale) * 100}%` }} />
-              </div>
-            </div>
-            <div className="compare-row">
-              <div className="compare-labels">
-                <dt>Estimated drive time</dt>
-                <dd>{driveMinutes !== null ? formatMinutes(driveMinutes) : "Not available"}</dd>
-              </div>
-              <div className="compare-track" aria-hidden="true">
-                {driveMinutes !== null && (
-                  <span className="compare-fill" style={{ width: `${(driveMinutes / scale) * 100}%` }} />
-                )}
-              </div>
-            </div>
-          </dl>
+      {comparable && (
+        <div className="result-details">
+          <table className="result-table">
+            <caption>Every model, same order</caption>
+            <thead>
+              <tr>
+                <th scope="col">Model</th>
+                <th scope="col" className="is-numeric">
+                  This order
+                </th>
+                <th scope="col" className="is-numeric">
+                  Test MAE
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.predictions.map((prediction) => (
+                <tr key={prediction.model_id} aria-current={prediction.model_id === shown.model_id ? "true" : undefined}>
+                  <th scope="row">
+                    {prediction.model_name}
+                    {prediction.selected && <span className="result-table-tag">Selected</span>}
+                  </th>
+                  <td className="is-numeric">
+                    {prediction.predicted_delivery_time_minutes !== null
+                      ? formatMinutes(prediction.predicted_delivery_time_minutes)
+                      : "Unavailable"}
+                  </td>
+                  <td className="is-numeric">{formatMae(prediction.test_mae)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <p className="compare-note">
-            Drive time only covers the road. Delivery time covers the whole order.
+            Test MAE is each model&apos;s average error on newer orders it never saw in training.{" "}
+            <Link href="/technical/evaluation">How the models compare</Link>
           </p>
         </div>
-
-        <ol className="timeline" aria-label="Delivery stages">
-          {STAGES.map((stage) => (
-            <li key={stage} className="timeline-stage">
-              {stage}
-            </li>
-          ))}
-        </ol>
-      </div>
+      )}
 
       <div className="result-actions">
         <button type="button" className="button button-primary" onClick={onNewOrder}>

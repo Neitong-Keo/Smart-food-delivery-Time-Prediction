@@ -5,6 +5,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes.dataset import router as dataset_router
 from app.api.routes.predictions import router as predictions_router
 from app.api.routes.restaurants import router as restaurants_router
 from app.api.v1.router import router as v1_router
@@ -12,7 +13,8 @@ from app.core.config import Settings, get_settings
 from app.core.logging import configure_logging
 from app.repositories.restaurants import SampleRestaurantRepository
 from app.schemas.health import HealthResponse
-from app.services.prediction import create_predictor, load_serving_limits
+from app.services.dataset import DatasetTables
+from app.services.prediction import create_model_registry, load_serving_limits
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +44,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application.state.restaurants = SampleRestaurantRepository()
     application.state.serving_limits = load_serving_limits()
-    application.state.predictor = create_predictor(
+    application.state.models = create_model_registry(
         resolved_settings.prediction_mode, resolved_settings.model_path
     )
+    application.state.predictor = application.state.models.selected.predictor
+    application.state.datasets = DatasetTables.from_config()
 
     application.include_router(restaurants_router)
     application.include_router(predictions_router)
+    application.include_router(dataset_router)
     application.include_router(v1_router)
 
     logger.info(

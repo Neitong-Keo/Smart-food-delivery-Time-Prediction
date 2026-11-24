@@ -17,6 +17,8 @@ paths:
   model_artifact: "artifacts/v1/model.joblib"
   metrics_artifact: "artifacts/v1/metrics.json"
   model_manifest: "artifacts/v1/manifest.json"
+  # Every candidate, refitted on training + validation orders, for side-by-side predictions.
+  models_dir: "artifacts/v1/models"
 
 schema:
   target_column: delivery_time_minutes

@@ -1,6 +1,11 @@
 import { isValidLatLng } from "@/lib/geo";
 import type {
   ModelInfo,
+  ModelList,
+  ModelPrediction,
+  ModelScores,
+  ModelSummary,
+  PredictionComparison,
   PredictionIssue,
   PredictionPreview,
   PredictionRequest,
@@ -75,6 +80,91 @@ export function parsePredictionResponse(value: unknown): PredictionResponse {
   return {
     predicted_delivery_time_minutes: value.predicted_delivery_time_minutes,
     model_status: value.model_status,
+    warnings: Array.isArray(value.warnings) ? value.warnings.filter(isIssue) : [],
+  };
+}
+
+const parseScores = (value: unknown): ModelScores | null => {
+  if (!isRecord(value) || !isFiniteNumber(value.mae) || !isFiniteNumber(value.rmse) || !isFiniteNumber(value.r2)) {
+    return null;
+  }
+  return {
+    mae: value.mae,
+    rmse: value.rmse,
+    r2: value.r2,
+    mean_signed_error_minutes: isFiniteNumber(value.mean_signed_error_minutes)
+      ? value.mean_signed_error_minutes
+      : null,
+  };
+};
+
+function parseModelSummary(value: unknown): ModelSummary {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyString(value.id) ||
+    !isNonEmptyString(value.name) ||
+    typeof value.selected !== "boolean" ||
+    !["demo", "live", "unavailable"].includes(String(value.status))
+  ) {
+    throw new Error("Invalid model summary.");
+  }
+  return {
+    id: value.id,
+    name: value.name,
+    selected: value.selected,
+    status: value.status as ModelSummary["status"],
+    detail: typeof value.detail === "string" ? value.detail : null,
+    validation: parseScores(value.validation),
+    test: parseScores(value.test),
+  };
+}
+
+export function parseModelList(value: unknown): ModelList {
+  if (!isRecord(value) || !isNonEmptyString(value.selected_model_id) || !Array.isArray(value.models)) {
+    throw new Error("Invalid model list.");
+  }
+  const models = value.models.map(parseModelSummary);
+  if (!models.some((model) => model.id === value.selected_model_id)) {
+    throw new Error("The selected model is missing from the list.");
+  }
+  return { selected_model_id: value.selected_model_id, models };
+}
+
+function parseModelPrediction(value: unknown): ModelPrediction {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyString(value.model_id) ||
+    !isNonEmptyString(value.model_name) ||
+    typeof value.selected !== "boolean" ||
+    !(value.predicted_delivery_time_minutes === null ||
+      (isFiniteNumber(value.predicted_delivery_time_minutes) && value.predicted_delivery_time_minutes > 0))
+  ) {
+    throw new Error("Invalid model prediction.");
+  }
+  return {
+    model_id: value.model_id,
+    model_name: value.model_name,
+    selected: value.selected,
+    predicted_delivery_time_minutes: value.predicted_delivery_time_minutes as number | null,
+    detail: typeof value.detail === "string" ? value.detail : null,
+    test_mae: isFiniteNumber(value.test_mae) ? value.test_mae : null,
+  };
+}
+
+export function parsePredictionComparison(value: unknown): PredictionComparison {
+  if (
+    !isRecord(value) ||
+    (value.model_status !== "demo" && value.model_status !== "live") ||
+    !isNonEmptyString(value.selected_model_id) ||
+    !Array.isArray(value.predictions) ||
+    value.predictions.length === 0
+  ) {
+    throw new Error("Invalid prediction comparison.");
+  }
+  return {
+    model_status: value.model_status,
+    selected_model_id: value.selected_model_id,
+    predictions: value.predictions.map(parseModelPrediction),
     warnings: Array.isArray(value.warnings) ? value.warnings.filter(isIssue) : [],
   };
 }

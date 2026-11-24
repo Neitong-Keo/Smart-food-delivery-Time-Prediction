@@ -29,7 +29,7 @@ certbot certonly --standalone --non-interactive --agree-tos --register-unsafely-
 ./ingress-sync.sh
 ``` The model and its summary metrics are mounted read-only from `model/`, outside Git. Keep those artifacts on the VPS across deployments.
 
-Provision the deployment directory once. Install `deploy-vps.sh`, `compose.vps.yml` and `ingress-sync.sh` from this directory, install and enable the units in `systemd/`, clone this public repository as `source.git` using `git clone --bare`, and copy the trusted `model.joblib` and `metrics.json` into `model/`. The VPS needs Docker Compose, Bash, Git, curl, flock, and Python 3.
+Provision the deployment directory once. Install `deploy-vps.sh`, `compose.vps.yml` and `ingress-sync.sh` from this directory, install and enable the units in `systemd/`, clone this public repository as `source.git` using `git clone --bare`, and copy the trusted `model.joblib` and `metrics.json` into `model/`. For the demo's model picker and the per-model scores, also copy `manifest.json` and the `models/` folder from `apps/backend/ml/artifacts/v1/`. Without them the API serves only the selected model. The VPS needs Docker Compose, Bash, Git, curl, flock, and Python 3.
 
 For an initial release from a review branch, run the installed script with the full commit SHA and branch ref:
 

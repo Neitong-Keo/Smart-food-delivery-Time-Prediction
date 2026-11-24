@@ -8,20 +8,24 @@ import { useState } from "react";
 import { RouteSteps } from "@/components/flow/RouteSteps";
 import { WorkspaceSkeleton } from "@/components/flow/WorkspaceSkeleton";
 import { DeliveryMap } from "@/components/maps/DeliveryMap";
+import { ModelPicker, type ModelOption } from "@/components/prediction/ModelPicker";
+import { OrderTimePicker } from "@/components/prediction/OrderTimePicker";
 import { PredictionInputs } from "@/components/prediction/PredictionInputs";
 import { PredictionIssues } from "@/components/prediction/PredictionIssues";
 import { PredictionResult } from "@/components/prediction/PredictionResult";
 import { Notice } from "@/components/ui/Notice";
-import { useDeliveryDraft } from "@/hooks/use-delivery-draft";
+import { useDeliveryDraft, type DeliveryDraft } from "@/hooks/use-delivery-draft";
 import { useDeliveryRoute } from "@/hooks/use-delivery-route";
 import { useMapEngine } from "@/hooks/use-map-engine";
+import { useModelList } from "@/hooks/use-model-list";
 import { usePrediction } from "@/hooks/use-prediction";
 import { usePredictionPreview } from "@/hooks/use-prediction-preview";
 import { useRestaurant } from "@/hooks/use-restaurants";
-import { formatCoordinates } from "@/lib/format";
 import { buildPredictionRequest } from "@/lib/prediction-request";
 import { historyRepository } from "@/services/history/history.repository";
-import { ORDER_TYPES, type OrderType } from "@/types/prediction";
+import { ORDER_TYPES } from "@/types/prediction";
+
+type OrderDetails = Partial<Pick<DeliveryDraft, "orderType" | "isFestival" | "orderPlacedAt">>;
 
 export function PredictionWorkspace() {
   const router = useRouter();
@@ -36,10 +40,18 @@ export function PredictionWorkspace() {
     retry: retryRoute,
   } = useDeliveryRoute(restaurant, location);
   const { state, predict, reset } = usePrediction();
+  const { list: modelList } = useModelList();
   const [saveState, setSaveState] = useState<"pending" | "saved" | "failed">("pending");
   const preview = usePredictionPreview(
     restaurant && location && route && routeStatus === "ready"
-      ? { restaurant, location, route, orderType: draft.orderType, isFestival: draft.isFestival }
+      ? {
+          restaurant,
+          location,
+          route,
+          orderType: draft.orderType,
+          isFestival: draft.isFestival,
+          orderPlacedAt: draft.orderPlacedAt,
+        }
       : null,
   );
 
@@ -89,7 +101,33 @@ export function PredictionWorkspace() {
     );
   }
 
-  const updateOrder = (details: { orderType?: OrderType; isFestival?: boolean }) => {
+  // The model list comes from the API; after a prediction the result lists the same models.
+  const models: ModelOption[] =
+    modelList?.models.map((model) => ({
+      id: model.id,
+      name: model.name,
+      selected: model.selected,
+      unavailable: model.status === "unavailable",
+    })) ??
+    (state.status === "success"
+      ? state.result.predictions.map((prediction) => ({
+          id: prediction.model_id,
+          name: prediction.model_name,
+          selected: prediction.selected,
+        }))
+      : []);
+  const defaultModelId =
+    modelList?.selected_model_id ?? (state.status === "success" ? state.result.selected_model_id : "");
+  const modelId = models.some((model) => model.id === draft.modelId) ? draft.modelId! : defaultModelId;
+  const shown =
+    state.status === "success"
+      ? (state.result.predictions.find((prediction) => prediction.model_id === modelId) ??
+        state.result.predictions.find((prediction) => prediction.selected) ??
+        state.result.predictions[0])
+      : null;
+
+  /** A changed input makes the old result wrong, so clear it, as for order type. */
+  const updateOrder = (details: OrderDetails) => {
     setOrderDetails(details);
     reset();
   };
@@ -102,11 +140,16 @@ export function PredictionWorkspace() {
       route,
       orderType: draft.orderType,
       isFestival: draft.isFestival,
+      orderPlacedAt: draft.orderPlacedAt,
     });
 
     setSaveState("pending");
     const result = await predict(request);
     if (!result) return;
+    const chosen =
+      result.predictions.find((prediction) => prediction.model_id === modelId) ??
+      result.predictions.find((prediction) => prediction.selected);
+    if (!chosen?.predicted_delivery_time_minutes) return;
 
     try {
       await historyRepository.add({
@@ -116,8 +159,9 @@ export function PredictionWorkspace() {
         destination: location.address,
         distanceKm: route.distanceKm,
         mapsDurationMinutes: route.durationMinutes,
-        predictedMinutes: result.predicted_delivery_time_minutes,
+        predictedMinutes: chosen.predicted_delivery_time_minutes,
         modelStatus: result.model_status,
+        modelName: result.predictions.length > 1 ? chosen.model_name : undefined,
         outsideTrainingRange: result.warnings.length > 0,
       });
       setSaveState("saved");
@@ -139,10 +183,11 @@ export function PredictionWorkspace() {
     <div className="container page">
       <RouteSteps current="prediction" />
 
-      {state.status === "success" && route && (
+      {state.status === "success" && route && shown && (
         <PredictionResult
           result={state.result}
-          requestedAt={state.requestedAt}
+          shown={shown}
+          placedAt={state.placedAt}
           route={route}
           timeZone={restaurant.time_zone}
           saveState={saveState}
@@ -152,7 +197,7 @@ export function PredictionWorkspace() {
 
       <div className="workspace">
         <div className="workspace-panel">
-          <h1 className="page-heading">Review your delivery</h1>
+          <h1 className="page-heading">Predict the delivery time</h1>
 
           <div className="trip">
             <div className="trip-stop">
@@ -160,7 +205,6 @@ export function PredictionWorkspace() {
               <div>
                 <p className="trip-label">From</p>
                 <p className="trip-name">{restaurant.name}</p>
-                <p className="trip-address">{restaurant.address}</p>
               </div>
             </div>
             <div className="trip-stop">
@@ -177,11 +221,7 @@ export function PredictionWorkspace() {
 
           <hr className="section-divider" />
 
-          <section className="inputs" aria-labelledby="inputs-title">
-            <h2 id="inputs-title" className="inputs-title">
-              What the prediction uses
-            </h2>
-
+          <section className="inputs" aria-label="Order details">
             {route && routeStatus === "ready" && <PredictionInputs preview={preview} route={route} />}
             {routeStatus === "loading" && (
               <div className="skeleton" role="status" aria-label="Calculating route" style={{ height: "5rem" }} />
@@ -224,14 +264,27 @@ export function PredictionWorkspace() {
               </div>
             </fieldset>
 
+            <OrderTimePicker
+              value={draft.orderPlacedAt}
+              timeZone={restaurant.time_zone}
+              onChange={(orderPlacedAt) => updateOrder({ orderPlacedAt })}
+            />
+
             <label className="check-row">
               <input
                 type="checkbox"
                 checked={draft.isFestival}
                 onChange={(event) => updateOrder({ isFestival: event.target.checked })}
               />
-              Ordering during a festival or public holiday
+              During a festival
             </label>
+
+            {/* Switching models keeps the result: every model's prediction is already loaded. */}
+            <ModelPicker
+              models={models}
+              value={modelId}
+              onChange={(next) => setOrderDetails({ modelId: next })}
+            />
           </section>
 
           {preview && <PredictionIssues issues={preview.issues} />}
@@ -263,24 +316,6 @@ export function PredictionWorkspace() {
                     : "Predict delivery time"}
             </button>
           )}
-
-          <details className="technical-details">
-            <summary>Technical details</summary>
-            <dl className="technical-list">
-              <div>
-                <dt>Restaurant coordinates</dt>
-                <dd>{formatCoordinates(restaurant.latitude, restaurant.longitude)}</dd>
-              </div>
-              <div>
-                <dt>Delivery coordinates</dt>
-                <dd>{formatCoordinates(location.lat, location.lng)}</dd>
-              </div>
-              <div>
-                <dt>Route source</dt>
-                <dd>{route ? "OSRM road route" : "Unavailable"}</dd>
-              </div>
-            </dl>
-          </details>
         </div>
 
         <div className="workspace-map">

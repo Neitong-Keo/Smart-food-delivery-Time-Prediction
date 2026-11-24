@@ -57,9 +57,18 @@ Run this from `apps/backend`:
 .\.venv\Scripts\python.exe -m ml.scripts.train_models
 ```
 
-The trainer uses orders with usable road distances inside the app's supported delivery range. It compares Decision Tree and XGBoost with a median predictor on the same chronological split, selects by validation MAE, and refits the selected settings on training and validation orders before scoring the newest test orders. The saved pipeline includes category encoding and missing-value handling.
+The trainer uses orders with usable road distances inside the app's supported delivery range. It tunes the median baseline, Decision Tree and XGBoost on the same chronological split and selects the model with the lowest validation MAE. It then refits every model with its best settings on training and validation orders and scores each once on the newest test orders. Every saved pipeline includes category encoding and missing-value handling.
 
-The **Model** page reads the summary in `ml/artifacts/v1/metrics.json`. The manifest contains the full validation comparison, tuning results, split dates and sizes, feature importance, and test errors. The evaluation plot and test predictions are in the same directory.
+| File in `ml/artifacts/v1/` | Contents |
+| --- | --- |
+| `model.joblib` | The selected model. The API uses it when a request doesn't name a model. |
+| `models/<id>.joblib` | Every model: `median`, `decision_tree` and `xgboost`. The API loads each one at startup. |
+| `manifest.json` | Split dates and sizes, tuning results, and `models.<id>` with each model's settings, validation and test scores, and feature importance |
+| `metrics.json` | The selected model's summary scores, for `GET /api/model` |
+| `test_predictions.csv` | Actual minutes and `predicted_<id>` for every test order |
+| `evaluation.png` | Actual against predicted, and the error histogram, for the selected model |
+
+After training, run `python -m ml.scripts.export_report` to refresh the technical pages' data in `apps/web/public/report/`.
 
 #### Evaluation on the Zomato dataset
 
@@ -72,6 +81,14 @@ The run used OSRM Table distances for the Kaggle coordinates. Of 45,584 cleaned 
 | XGBoost | 6.16 | 7.71 | 0.356 |
 
 XGBoost won with 300 trees, depth 5, and a learning rate of 0.03. After refitting, its test MAE was **6.04 minutes**, RMSE was **7.56 minutes**, and R² was **0.316**. Shuffling order hour on validation increased MAE the most, by 1.07 minutes. On test orders that took more than 35 minutes, the model underestimated by 9.89 minutes on average.
+
+Every model is refitted and scored on the same test orders:
+
+| Test model | MAE (min) | RMSE (min) | R² | Mean signed error (min) |
+| --- | ---: | ---: | ---: | ---: |
+| Median baseline | 7.30 | 9.17 | -0.008 | -0.81 |
+| Decision Tree | 6.11 | 7.64 | 0.301 | +0.14 |
+| XGBoost | 6.04 | 7.56 | 0.316 | +0.15 |
 
 These results measure performance on the held-out Zomato orders from multiple Indian cities. See [Before presenting model results](#before-presenting-model-results) for the dataset's location limitations.
 
@@ -121,6 +138,25 @@ Only load `model.joblib` files from a source you trust, because loading one can 
 ```
 
 `model_status` is `demo` or `live`. The interface labels every `demo` result. An order outside the blocked limits returns HTTP 422 with a message for the customer.
+
+Add `"model_id": "decision_tree"` (or `median`, `xgboost`) to predict with a specific model. The response names the model in `model_id` and `model_name`. An unknown id returns HTTP 422. `GET /api/models` lists the served ids.
+
+**Response:** `POST /api/predict/compare` takes the same request and returns every model's prediction:
+
+```json
+{
+  "model_status": "live",
+  "selected_model_id": "xgboost",
+  "predictions": [
+    { "model_id": "median", "model_name": "Median baseline", "selected": false, "predicted_delivery_time_minutes": 25, "detail": null, "test_mae": 7.3 },
+    { "model_id": "decision_tree", "model_name": "Decision Tree", "selected": false, "predicted_delivery_time_minutes": 20, "detail": null, "test_mae": 6.11 },
+    { "model_id": "xgboost", "model_name": "XGBoost", "selected": true, "predicted_delivery_time_minutes": 21, "detail": null, "test_mae": 6.04 }
+  ],
+  "warnings": []
+}
+```
+
+A model that couldn't load has a null prediction and a `detail`. The request fails with HTTP 503 only when no model can predict. In demo mode, both endpoints serve a single `demo` model.
 
 ## Input limits
 

@@ -1,5 +1,6 @@
 .home-hero {
   container-type: inline-size;
+  flex: 1;
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   min-height: min(44rem, calc(100dvh - var(--header-height)));
@@ -189,117 +190,6 @@
   letter-spacing: 0;
 }
 
-/* How it works */
-.home-section {
-  padding-block: var(--space-20);
-}
-
-.home-section-title {
-  font-size: var(--text-3xl);
-  letter-spacing: -0.025em;
-}
-
-.how-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
-  gap: var(--space-12);
-}
-
-.how-steps {
-  position: relative;
-  display: grid;
-  gap: var(--space-8);
-}
-
-.how-steps::before {
-  content: "";
-  position: absolute;
-  left: 0.9375rem;
-  top: var(--space-4);
-  bottom: var(--space-12);
-  width: 3px;
-  background: var(--color-accent);
-}
-
-.how-step {
-  position: relative;
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr);
-  gap: var(--space-5);
-}
-
-.how-step-number {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border: 2px solid var(--color-accent);
-  border-radius: 50%;
-  background: var(--color-bg);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-}
-
-.how-step h3 {
-  font-size: var(--text-xl);
-  line-height: 2rem;
-}
-
-.how-step p {
-  margin-top: var(--space-1);
-  max-width: 52ch;
-  color: var(--color-text-muted);
-}
-
-/* Estimate factors */
-.factors {
-  background: var(--color-surface-muted);
-}
-
-.factors-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
-  gap: var(--space-12);
-  align-items: center;
-}
-
-.factors-photo {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: var(--radius-lg);
-}
-
-.factor-list {
-  display: grid;
-  gap: var(--space-5);
-  margin-top: var(--space-6);
-}
-
-.factor {
-  display: grid;
-  grid-template-columns: 1.5rem minmax(0, 1fr);
-  gap: var(--space-3);
-}
-
-.factor > svg {
-  margin-top: 2px;
-  color: var(--color-accent-text);
-}
-
-.factor h3 {
-  font-size: var(--text-base);
-  letter-spacing: -0.01em;
-  line-height: 1.5;
-}
-
-.factor p {
-  max-width: 48ch;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
 @media (max-width: 960px) {
   .home-hero {
     grid-template-columns: minmax(0, 1fr);
@@ -316,16 +206,6 @@
 
   .hero-map {
     min-height: 24rem;
-  }
-
-  .how-grid,
-  .factors-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-8);
-  }
-
-  .home-section {
-    padding-block: var(--space-12);
   }
 }
 

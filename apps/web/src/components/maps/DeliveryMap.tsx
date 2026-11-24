@@ -18,6 +18,8 @@ interface DeliveryMapProps {
   route: RouteSummary | null;
   interactive?: boolean;
   onPick?: (point: LatLng, source: "map" | "drag") => void;
+  /** Called when a click or drag outside the delivery area is ignored. */
+  onOutside?: () => void;
 }
 
 export function DeliveryMap({
@@ -27,6 +29,7 @@ export function DeliveryMap({
   route,
   interactive = false,
   onPick,
+  onOutside,
 }: DeliveryMapProps) {
   const [failed, setFailed] = useState(false);
   const theme = useDocumentTheme();
@@ -47,6 +50,7 @@ export function DeliveryMap({
       route={route}
       interactive={interactive}
       onPick={onPick}
+      onOutside={onOutside}
       onFailure={() => setFailed(true)}
     />
   );
@@ -54,10 +58,20 @@ export function DeliveryMap({
 
 type CanvasProps = Omit<DeliveryMapProps, "engine"> & { onFailure: () => void };
 
-function MapCanvas({ restaurant, location, route, interactive = false, onPick, onFailure }: CanvasProps) {
+function MapCanvas({
+  restaurant,
+  location,
+  route,
+  interactive = false,
+  onPick,
+  onOutside,
+  onFailure,
+}: CanvasProps) {
   const element = useRef<HTMLDivElement | null>(null);
   const latestPick = useRef(onPick);
   latestPick.current = onPick;
+  const latestOutside = useRef(onOutside);
+  latestOutside.current = onOutside;
   const latestFailure = useRef(onFailure);
   latestFailure.current = onFailure;
   const [controller, setController] = useState<DeliveryMapController | null>(null);
@@ -74,6 +88,7 @@ function MapCanvas({ restaurant, location, route, interactive = false, onPick, o
       interactive,
       signal: abort.signal,
       onPick: (point, source) => latestPick.current?.(point, source),
+      onOutside: () => latestOutside.current?.(),
     })
       .then((map) => {
         if (!map) return;

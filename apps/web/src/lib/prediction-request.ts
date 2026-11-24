@@ -9,11 +9,17 @@ export interface PredictionInput {
   route: RouteSummary;
   orderType: OrderType;
   isFestival: boolean;
+  /** Restaurant-local ISO time with its offset, from the order time picker. Null means now. */
+  orderPlacedAt?: string | null;
 }
 
+/**
+ * Build the API request. `placedAt` overrides the input's order time: pass a Date for an
+ * instant (sent with the browser's offset) or an ISO string that already has an offset.
+ */
 export function buildPredictionRequest(
-  { restaurant, location, route, orderType, isFestival }: PredictionInput,
-  placedAt: Date = new Date(),
+  { restaurant, location, route, orderType, isFestival, orderPlacedAt }: PredictionInput,
+  placedAt: Date | string = orderPlacedAt ?? new Date(),
 ): PredictionRequest {
   return {
     restaurant_id: restaurant.id,
@@ -25,6 +31,6 @@ export function buildPredictionRequest(
     route_duration_minutes: route.durationMinutes,
     order_type: orderType,
     is_festival: isFestival,
-    order_placed_at: toLocalIsoString(placedAt),
+    order_placed_at: typeof placedAt === "string" ? placedAt : toLocalIsoString(placedAt),
   };
 }

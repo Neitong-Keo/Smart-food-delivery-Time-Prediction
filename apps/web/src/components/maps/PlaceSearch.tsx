@@ -103,7 +103,7 @@ export function PlaceSearch({ near, onSelect, onError }: PlaceSearchProps) {
           className="input"
           type="text"
           role="combobox"
-          placeholder="Search for your address"
+          placeholder="Search for an address in Bengaluru"
           autoComplete="off"
           maxLength={120}
           aria-expanded={showList}
@@ -170,7 +170,7 @@ export function PlaceSearch({ near, onSelect, onError }: PlaceSearchProps) {
           ))}
           {suggestions.length === 0 && (
             <li className="place-message" role="presentation">
-              No addresses found nearby. Try another search, or click the map.
+              No addresses found in the delivery area. Try another search, or click the map.
             </li>
           )}
         </ul>

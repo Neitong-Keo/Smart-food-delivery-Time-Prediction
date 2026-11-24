@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { isValidLatLng } from "@/lib/geo";
+import { isZonedIsoString } from "@/lib/order-time";
 import type { DeliveryLocation, RouteSummary } from "@/types/location";
 import type { OrderType } from "@/types/prediction";
 import { ORDER_TYPES } from "@/types/prediction";
@@ -21,6 +22,10 @@ export interface DeliveryDraft {
   route: RouteSummary | null;
   orderType: OrderType;
   isFestival: boolean;
+  /** Chosen order time in the restaurant's local time, with its UTC offset. Null means "now". */
+  orderPlacedAt: string | null;
+  /** Model whose prediction is shown. Null means the model selected in training. */
+  modelId: string | null;
 }
 
 interface DeliveryDraftContextValue {
@@ -29,17 +34,21 @@ interface DeliveryDraftContextValue {
   selectRestaurant: (id: string) => void;
   setLocation: (location: DeliveryLocation) => void;
   setRoute: (route: RouteSummary | null) => void;
-  setOrderDetails: (details: Partial<Pick<DeliveryDraft, "orderType" | "isFestival">>) => void;
+  setOrderDetails: (
+    details: Partial<Pick<DeliveryDraft, "orderType" | "isFestival" | "orderPlacedAt" | "modelId">>,
+  ) => void;
   resetDraft: () => void;
 }
 
-const STORAGE_KEY = "smart-delivery-draft-v3";
+const STORAGE_KEY = "smart-delivery-draft-v4";
 const EMPTY_DRAFT: DeliveryDraft = {
   restaurantId: null,
   location: null,
   route: null,
   orderType: "meal",
   isFestival: false,
+  orderPlacedAt: null,
+  modelId: null,
 };
 
 const DeliveryDraftContext = createContext<DeliveryDraftContextValue | null>(null);
@@ -59,6 +68,11 @@ function readStoredDraft(): DeliveryDraft {
         ? (stored.orderType as OrderType)
         : "meal",
       isFestival: stored.isFestival === true,
+      orderPlacedAt:
+        typeof stored.orderPlacedAt === "string" && isZonedIsoString(stored.orderPlacedAt)
+          ? stored.orderPlacedAt
+          : null,
+      modelId: typeof stored.modelId === "string" ? stored.modelId : null,
     };
   } catch {
     return EMPTY_DRAFT;
