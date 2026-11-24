@@ -232,13 +232,7 @@ next-env.d.ts
 *.tsbuildinfo
 .env*.local
 
-# ML datasets, generated manifests, and model artifacts (keep .gitkeep tracked)
-apps/backend/ml/data/raw/*
-!apps/backend/ml/data/raw/.gitkeep
-apps/backend/ml/data/processed/*
-!apps/backend/ml/data/processed/.gitkeep
-apps/backend/ml/data/manifests/*
-!apps/backend/ml/data/manifests/.gitkeep
+# ML model artifacts and experiments (keep .gitkeep tracked)
 apps/backend/ml/artifacts/*
 !apps/backend/ml/artifacts/v1/
 apps/backend/ml/artifacts/v1/*

@@ -1,0 +1,468 @@
+{
+  "input_rows": 45584,
+  "output_rows": 45584,
+  "raw_profile": {
+    "rows": 45584,
+    "column_count": 20,
+    "columns": {
+      "ID": {
+        "input_dtype": "string",
+        "logical_type": "identifier",
+        "missing": 0,
+        "distinct_non_null": 45584
+      },
+      "Delivery_person_ID": {
+        "input_dtype": "string",
+        "logical_type": "identifier",
+        "missing": 0,
+        "distinct_non_null": 1320
+      },
+      "Delivery_person_Age": {
+        "input_dtype": "string",
+        "logical_type": "numeric",
+        "missing": 1854,
+        "distinct_non_null": 22,
+        "numeric_range": {
+          "min": 15.0,
+          "median": 30.0,
+          "max": 50.0
+        },
+        "numeric_issues": {
+          "missing": 1854,
+          "malformed": 0,
+          "non_finite": 0,
+          "out_of_range": 0,
+          "not_integer": 0
+        }
+      },
+      "Delivery_person_Ratings": {
+        "input_dtype": "string",
+        "logical_type": "numeric",
+        "missing": 1908,
+        "distinct_non_null": 28,
+        "numeric_range": {
+          "min": 1.0,
+          "median": 4.7,
+          "max": 6.0
+        },
+        "numeric_issues": {
+          "missing": 1908,
+          "malformed": 0,
+          "non_finite": 0,
+          "out_of_range": 53,
+          "not_integer": 0
+        }
+      },
+      "Restaurant_latitude": {
+        "input_dtype": "string",
+        "logical_type": "numeric",
+        "missing": 0,
+        "distinct_non_null": 657,
+        "numeric_range": {
+          "min": -30.905562,
+          "median": 18.55144,
+          "max": 30.914057
+        },
+        "numeric_issues": {
+          "missing": 0,
+          "malformed": 0,
+          "non_finite": 0,
+          "out_of_range": 0,
+          "not_integer": 0
+        }
+      },
+      "Restaurant_longitude": {
+        "input_dtype": "string",
+        "logical_type": "numeric",
+        "missing": 0,
+        "distinct_non_null": 518,
+        "numeric_range": {
+          "min": -88.366217,
+          "median": 75.897963,
+          "max": 88.433452
+        },
+        "numeric_issues": {
+          "missing": 0,
+          "malformed": 0,
+          "non_finite": 0,
+          "out_of_range": 0,
+          "not_integer": 0
+        }
+      },
+      "Delivery_location_latitude": {
+        "input_dtype": "string",
+        "logical_type": "numeric",
+        "missing": 0,
+        "distinct_non_null": 4373,
+        "numeric_range": {
+          "min": 0.01,
+          "median": 18.633934,
+          "max": 31.054057
+        },
+        "numeric_issues": {
+          "missing": 0,
+          "malformed": 0,
+          "non_finite": 0,
+          "out_of_range": 0,
+          "not_integer": 0
+        }
+      },
+      "Delivery_location_longitude": {
+        "input_dtype": "string",
+        "logical_type": "numeric",
+        "missing": 0,
+        "distinct_non_null": 4373,
+        "numeric_range": {
+          "min": 0.01,
+          "median": 76.002574,
+          "max": 88.563452
+        },
+        "numeric_issues": {
+          "missing": 0,
+          "malformed": 0,
+          "non_finite": 0,
+          "out_of_range": 0,
+          "not_integer": 0
+        }
+      },
+      "Order_Date": {
+        "input_dtype": "string",
+        "logical_type": "date",
+        "missing": 0,
+        "distinct_non_null": 44
+      },
+      "Time_Orderd": {
+        "input_dtype": "string",
+        "logical_type": "time",
+        "missing": 1731,
+        "distinct_non_null": 176
+      },
+      "Time_Order_picked": {
+        "input_dtype": "string",
+        "logical_type": "time",
+        "missing": 0,
+        "distinct_non_null": 193
+      },
+      "Weather_conditions": {
+        "input_dtype": "string",
+        "logical_type": "category",
+        "missing": 616,
+        "distinct_non_null": 6,
+        "common_values": {
+          "Fog": 7653,
+          "Stormy": 7584,
+          "Cloudy": 7533,
+          "Sandstorms": 7494,
+          "Windy": 7422,
+          "Sunny": 7282
+        }
+      },
+      "Road_traffic_density": {
+        "input_dtype": "string",
+        "logical_type": "category",
+        "missing": 601,
+        "distinct_non_null": 4,
+        "common_values": {
+          "Low": 15476,
+          "Jam": 14139,
+          "Medium": 10945,
+          "High": 4423
+        }
+      },
+      "Vehicle_condition": {
+        "input_dtype": "string",
+        "logical_type": "numeric",
+        "missing": 0,
+        "distinct_non_null": 4,
+        "numeric_range": {
+          "min": 0.0,
+          "median": 1.0,
+          "max": 3.0
+        },
+        "numeric_issues": {
+          "missing": 0,
+          "malformed": 0,
+          "non_finite": 0,
+          "out_of_range": 0,
+          "not_integer": 0
+        }
+      },
+      "Type_of_order": {
+        "input_dtype": "string",
+        "logical_type": "category",
+        "missing": 0,
+        "distinct_non_null": 4,
+        "common_values": {
+          "Snack": 11530,
+          "Meal": 11456,
+          "Drinks": 11321,
+          "Buffet": 11277
+        }
+      },
+      "Type_of_vehicle": {
+        "input_dtype": "string",
+        "logical_type": "category",
+        "missing": 0,
+        "distinct_non_null": 4,
+        "common_values": {
+          "motorcycle": 26429,
+          "scooter": 15273,
+          "electric_scooter": 3814,
+          "bicycle": 68
+        }
+      },
+      "multiple_deliveries": {
+        "input_dtype": "string",
+        "logical_type": "numeric",
+        "missing": 993,
+        "distinct_non_null": 4,
+        "numeric_range": {
+          "min": 0.0,
+          "median": 1.0,
+          "max": 3.0
+        },
+        "numeric_issues": {
+          "missing": 993,
+          "malformed": 0,
+          "non_finite": 0,
+          "out_of_range": 0,
+          "not_integer": 0
+        }
+      },
+      "Festival": {
+        "input_dtype": "string",
+        "logical_type": "category",
+        "missing": 228,
+        "distinct_non_null": 2,
+        "common_values": {
+          "No": 44460,
+          "Yes": 896
+        }
+      },
+      "City": {
+        "input_dtype": "string",
+        "logical_type": "category",
+        "missing": 1200,
+        "distinct_non_null": 3,
+        "common_values": {
+          "Metropolitian": 34087,
+          "Urban": 10133,
+          "Semi-Urban": 164
+        }
+      },
+      "Time_taken (min)": {
+        "input_dtype": "string",
+        "logical_type": "duration_minutes",
+        "missing": 0,
+        "distinct_non_null": 45,
+        "numeric_range": {
+          "min": 10.0,
+          "median": 26.0,
+          "max": 54.0
+        },
+        "numeric_issues": {
+          "missing": 0,
+          "malformed": 0,
+          "non_finite": 0,
+          "non_positive": 0
+        }
+      }
+    }
+  },
+  "duplicates": {
+    "exact_rows_removed": 0,
+    "raw_repeated_order_ids": 0,
+    "raw_rows_with_repeated_order_ids": 0,
+    "conflicting_order_ids": 0,
+    "rows_with_conflicting_order_ids": 0,
+    "retained_conflicting_order_rows": 0,
+    "policy": "Keep the first exact CSV record. Flag distinct records with the same trimmed, nonmissing ID and retain all with valid targets for audit."
+  },
+  "target_rejections": {
+    "missing": 0,
+    "malformed": 0,
+    "non_finite": 0,
+    "non_positive": 0
+  },
+  "target_review": {
+    "rule": "Flag valid durations above the configured threshold and retain the rows.",
+    "threshold_minutes": 60,
+    "long_deliveries": 0
+  },
+  "numeric_features_quality": {
+    "Delivery_person_Age": {
+      "rule": {
+        "min": 1,
+        "max": 120,
+        "integer": true
+      },
+      "missing": 1854,
+      "malformed": 0,
+      "non_finite": 0,
+      "out_of_range": 0,
+      "not_integer": 0,
+      "under_18_review": 38
+    },
+    "Delivery_person_Ratings": {
+      "rule": {
+        "min": 1,
+        "max": 5,
+        "integer": false
+      },
+      "missing": 1908,
+      "malformed": 0,
+      "non_finite": 0,
+      "out_of_range": 53,
+      "not_integer": 0
+    },
+    "Vehicle_condition": {
+      "rule": {
+        "min": 0,
+        "max": 3,
+        "integer": true
+      },
+      "missing": 0,
+      "malformed": 0,
+      "non_finite": 0,
+      "out_of_range": 0,
+      "not_integer": 0
+    },
+    "multiple_deliveries": {
+      "rule": {
+        "min": 0,
+        "max": 3,
+        "integer": true
+      },
+      "missing": 993,
+      "malformed": 0,
+      "non_finite": 0,
+      "out_of_range": 0,
+      "not_integer": 0
+    }
+  },
+  "timestamps": {
+    "missing_date": 0,
+    "invalid_date": 0,
+    "missing_time": 1731,
+    "invalid_time": 0,
+    "fractional_day_times": 4068,
+    "midnight_rollovers": 430,
+    "out_of_range_timestamp": 0,
+    "null_timestamp": 1731,
+    "rule": "DD-MM-YYYY with HH:MM or a minute-aligned fraction of a day. A fraction of 1 denotes 00:00 on the following date. Timestamps use local clock time."
+  },
+  "distance": {
+    "description": "Straight-line great-circle distance in kilometers (Haversine).",
+    "rule": "Latitude must be within [-90, 90] and longitude within [-180, 180]. A (0, 0) endpoint is treated as a missing location. An individual zero is allowed. Distances above the configured maximum are nulled. Source signs are preserved.",
+    "coordinate_pair_issues": {
+      "restaurant": {
+        "missing_component": 0,
+        "malformed_component": 0,
+        "non_finite_component": 0,
+        "out_of_range": 0,
+        "zero_pair": 3640,
+        "invalid_pair": 3640
+      },
+      "delivery": {
+        "missing_component": 0,
+        "malformed_component": 0,
+        "non_finite_component": 0,
+        "out_of_range": 0,
+        "zero_pair": 0,
+        "invalid_pair": 0
+      }
+    },
+    "rows_with_invalid_coordinate_pair": 3640,
+    "implausible_distances": 431,
+    "max_plausible_km": 100,
+    "pre_cutoff_km": {
+      "min": 1.4650694288682353,
+      "median": 9.22038119632281,
+      "max": 19692.7018071537
+    },
+    "excluded_km": {
+      "min": 2216.0688545905477,
+      "median": 5897.0239072030045,
+      "max": 19692.7018071537
+    },
+    "implausible_distances_with_negative_restaurant_coordinates": 431,
+    "retained_km": {
+      "min": 1.4650694288682353,
+      "median": 9.193034030786436,
+      "max": 20.96951834437969
+    }
+  },
+  "remaining_null_counts": {
+    "ID": 0,
+    "Delivery_person_ID": 0,
+    "order_id_conflict": 0,
+    "Weather_conditions": 616,
+    "Road_traffic_density": 601,
+    "Type_of_order": 0,
+    "Type_of_vehicle": 0,
+    "Festival": 228,
+    "City": 1200,
+    "Delivery_person_Age": 1854,
+    "Delivery_person_Ratings": 1961,
+    "Vehicle_condition": 0,
+    "multiple_deliveries": 993,
+    "order_timestamp": 1731,
+    "order_hour": 1731,
+    "order_day_of_week": 1731,
+    "Restaurant_latitude": 3640,
+    "Restaurant_longitude": 3640,
+    "Delivery_location_latitude": 0,
+    "Delivery_location_longitude": 0,
+    "distance_km": 4071,
+    "delivery_time_minutes": 0,
+    "long_delivery_review": 0
+  },
+  "final_schema": {
+    "target_column": "delivery_time_minutes",
+    "feature_allowlist": [
+      "Type_of_order",
+      "Festival",
+      "City",
+      "order_hour",
+      "order_day_of_week",
+      "distance_km"
+    ],
+    "column_types": {
+      "ID": "string",
+      "Delivery_person_ID": "string",
+      "order_id_conflict": "bool",
+      "Weather_conditions": "string",
+      "Road_traffic_density": "string",
+      "Type_of_order": "string",
+      "Type_of_vehicle": "string",
+      "Festival": "string",
+      "City": "string",
+      "Delivery_person_Age": "Int64",
+      "Delivery_person_Ratings": "Float64",
+      "Vehicle_condition": "Int64",
+      "multiple_deliveries": "Int64",
+      "order_timestamp": "datetime64[ns]",
+      "order_hour": "Int64",
+      "order_day_of_week": "Int64",
+      "Restaurant_latitude": "Float64",
+      "Restaurant_longitude": "Float64",
+      "Delivery_location_latitude": "Float64",
+      "Delivery_location_longitude": "Float64",
+      "distance_km": "Float64",
+      "delivery_time_minutes": "Float64",
+      "long_delivery_review": "boolean"
+    },
+    "order_day_of_week_convention": "Monday=0, Sunday=6"
+  },
+  "cleaning_policy": {
+    "missing_markers": [
+      "",
+      "nan"
+    ],
+    "categories": "Trim and lowercase categories. City labels use title case and Metropolitian is mapped to Metropolitan.",
+    "issue_count_population": "Feature issues are counted on rows with valid targets after exact deduplication. Coordinate-pair reasons can overlap. Target rejections are mutually exclusive and counted after exact deduplication.",
+    "availability": "Rider, vehicle, batching, weather and traffic fields are audit columns pending confirmation of order-time availability. Pickup time is excluded."
+  },
+  "source_file": "Zomato Dataset.csv",
+  "parquet_sha256": "e4f9fac61ed6546ea37af8e99e843b0ffa91114213ff2153107f55088fd6a7a4"
+}

@@ -102,7 +102,9 @@ The frontend needs no changes. See the [integration guide](docs/ml-integration.m
 
 ## Prepare the training data
 
-Download `Zomato Dataset.csv` from [Kaggle](https://www.kaggle.com/datasets/saurabhbadole/zomato-delivery-operations-analytics-dataset) and place it in `apps/backend/ml/data/raw/`. Git ignores this folder. Run these commands from `apps/backend`.
+The raw CSV is included at `apps/backend/ml/data/raw/Zomato Dataset.csv`. [Dataset source on Kaggle](https://www.kaggle.com/datasets/saurabhbadole/zomato-delivery-operations-analytics-dataset)
+
+Run these commands from `apps/backend`.
 
 **1. Clean the dataset**
 
