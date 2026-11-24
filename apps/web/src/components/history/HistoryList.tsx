@@ -99,6 +99,9 @@ export function HistoryList() {
                     {entry.modelStatus === "demo" && (
                       <span className="history-subnote history-subnote-demo">Demo result</span>
                     )}
+                    {entry.modelStatus === "live" && typeof entry.modelName === "string" && (
+                      <span className="history-subnote">{entry.modelName}</span>
+                    )}
                     {entry.outsideTrainingRange && (
                       <span className="history-subnote">Less certain</span>
                     )}

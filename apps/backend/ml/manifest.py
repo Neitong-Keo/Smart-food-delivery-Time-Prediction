@@ -21,6 +21,8 @@ class DatasetPaths:
     model_artifact: Path
     metrics_artifact: Path
     model_manifest: Path
+    routed_parquet: Path
+    models_dir: Path
 
 
 def load_dataset_config(
@@ -59,6 +61,10 @@ def resolve_dataset_paths(
         model_artifact=base_dir / paths["model_artifact"],
         metrics_artifact=base_dir / paths["metrics_artifact"],
         model_manifest=base_dir / paths["model_manifest"],
+        routed_parquet=base_dir / paths.get(
+            "routed_parquet", "data/processed/dataset_with_routes.parquet"
+        ),
+        models_dir=base_dir / paths.get("models_dir", "artifacts/v1/models"),
     )
 
 

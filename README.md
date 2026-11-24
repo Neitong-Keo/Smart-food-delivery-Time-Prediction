@@ -1,6 +1,11 @@
 # Smart Food Delivery Time Prediction
 
-A food delivery web app that estimates how long an order will take. Customers choose a restaurant, set their location on a map, see the actual road route, and get a delivery time. The repository also contains the Python workflow that prepares the [Zomato delivery dataset](https://www.kaggle.com/datasets/saurabhbadole/zomato-delivery-operations-analytics-dataset) for training.
+A food delivery web app that estimates how long an order will take, in two parts:
+
+- **Demo**: choose a Bengaluru restaurant, drop a pin on the map, pick when the order is placed, and compare what the median baseline, a Decision Tree and XGBoost predict.
+- **Technical**: a report that walks through the [Zomato delivery dataset](https://www.kaggle.com/datasets/saurabhbadole/zomato-delivery-operations-analytics-dataset), the exploratory analysis, outliers and cleaning, the data split, training, evaluation and the presentation slides.
+
+The repository also contains the Python workflow that prepares the data and trains the models.
 
 The app runs without a dataset, a trained model, or any API keys. **Delivery times are labelled as demo results until the trained model is connected.**
 
@@ -59,11 +64,12 @@ npm.cmd run dev
 
 Open [http://localhost:3600](http://localhost:3600), then:
 
-1. Select **Predict delivery time** and choose a restaurant.
-2. Search for an address, click the map, or use your current location. Drag the pin to adjust it.
+1. Select **Start demo** and choose a restaurant.
+2. Search for an address or click the map. Drag the pin to adjust it. The map stays inside the Bengaluru delivery area from the dataset.
 3. Select **Confirm delivery location**.
-4. Choose the order type and select **Predict delivery time**.
-5. Open **History** to see past predictions, or **Model** to see which predictor is running.
+4. Choose the order type and the order time (now, or a day and time in the restaurant's time zone), then select **Predict delivery time**.
+5. Switch between models to see each one's prediction. The table under the result lists all three.
+6. Open **Technical** for the report, or **Prediction history** in the footer for past predictions.
 
 Press `Ctrl+C` in each terminal to stop the app.
 
@@ -72,7 +78,7 @@ Press `Ctrl+C` in each terminal to stop the app.
 | Model input | Where it comes from |
 | --- | --- |
 | Road distance | Actual route from the restaurant to the customer, from OSRM |
-| Order hour and weekday | The restaurant's local time when the order is placed |
+| Order hour and weekday | The chosen order time, or now, in the restaurant's local time |
 | Order type | Meal, snack, drinks, or buffet |
 | Festival | Checkbox on the prediction page |
 | Area type | Metropolitan, urban, or semi-urban, stored on the restaurant |
@@ -83,11 +89,11 @@ Press `Ctrl+C` in each terminal to stop the app.
 
 ## Connect the trained model
 
-The API is ready to serve a fitted scikit-learn pipeline.
+The API serves every model the training command saves. Use model mode for the demo, so predictions come from the trained models instead of the demo rule.
 
 1. Add road distances to the training data, as described in [Prepare the training data](#prepare-the-training-data).
-2. Run the model training command to compare Decision Tree and XGBoost and export the winner.
-3. Check `apps/backend/ml/artifacts/v1/` for the fitted pipeline, metrics, and evaluation chart.
+2. Run the model training command. It trains the median baseline, Decision Tree and XGBoost, and saves all three.
+3. Check `apps/backend/ml/artifacts/v1/` for `model.joblib` (the selected model), `models/` (every model), the metrics and the evaluation chart.
 4. Restart the API in model mode:
 
    ```powershell
@@ -96,7 +102,7 @@ The API is ready to serve a fitted scikit-learn pipeline.
    .\.venv\Scripts\python.exe -m uvicorn app.main:app --port 8600
    ```
 
-5. Open the **Model** page. It should say **The trained model is connected**.
+5. Open **Technical → Evaluation**. Under **What the running API serves now**, all three models should be **Live**.
 
 The frontend needs no changes. See the [integration guide](docs/ml-integration.md) for the training code and checks.
 
@@ -128,7 +134,7 @@ Or use the shared public server, which is limited to one request about every sec
 .\.venv\Scripts\python.exe -m ml.scripts.enrich_routes --routing-url https://router.project-osrm.org
 ```
 
-For a one-off run using an OSRM server that supports Table distances, add `--table` to group nearby trips into small requests. Table mode uses the fastest mapped route. The app and the default training route command can prefer a ferry-free alternative.
+For a one-off run using an OSRM server that supports Table distances, add `--table` to group nearby trips into small requests. Table mode uses the fastest mapped route. The app and the default training route command can prefer a ferry-free alternative. With `--table`, the public server needs only about 90 requests (around two minutes) for the 4,360 unique routes.
 
 Completed routes are cached, so you can stop and rerun the command. The route file is `ml/data/processed/dataset_with_routes.parquet`. Use the fitted range reported in the training manifest for `serving.training_road_distance_km` in [`dataset.yaml`](apps/backend/ml/configs/dataset.yaml).
 
@@ -139,7 +145,20 @@ Completed routes are cached, so you can stop and rerun the command. The route fi
 .\.venv\Scripts\python.exe -m ml.scripts.train_models
 ```
 
-This selects the candidate with the lowest validation mean absolute error, evaluates the final pipeline on newer orders, and writes `model.joblib`, `metrics.json`, `manifest.json`, `evaluation.png`, and `test_predictions.csv` under `ml/artifacts/v1/`.
+This tunes each model on the validation orders and selects the one with the lowest validation mean absolute error. It refits every model on training and validation orders, scores each once on the newest orders, and writes these files under `ml/artifacts/v1/`:
+
+- `model.joblib`: the selected model, which the API uses by default
+- `models/median.joblib`, `models/decision_tree.joblib`, `models/xgboost.joblib`: every model, for the demo's model picker
+- `manifest.json`: the split, tuning results, and validation and test scores for every model
+- `metrics.json`, `evaluation.png` and `test_predictions.csv` (one prediction column per model)
+
+**4. Export the report data**
+
+```powershell
+.\.venv\Scripts\python.exe -m ml.scripts.export_report
+```
+
+This writes `eda.json`, `outliers.json` and `model.json` to `apps/web/public/report/` for the technical pages. Commit them after retraining, then rebuild the website.
 
 The original median baseline also runs on the cleaned data before routing:
 
@@ -175,7 +194,11 @@ The map services are free, need no accounts, and are shared public servers with 
 | [GET /api/restaurants](http://localhost:8600/api/restaurants) | List restaurants, with optional `search` and `cuisine` filters |
 | [GET /api/restaurants/{id}](http://localhost:8600/api/restaurants/restaurant_001) | One restaurant and its coordinates |
 | POST /api/predict/preview | The exact model inputs and any range warnings |
-| POST /api/predict | Predict a delivery time |
+| POST /api/predict | Predict a delivery time. Add `model_id` to choose a model |
+| POST /api/predict/compare | Every model's prediction for one order |
+| [GET /api/models](http://localhost:8600/api/models) | Models the API serves, with validation and test scores |
+| [GET /api/dataset](http://localhost:8600/api/dataset) | One page of the cleaned or raw dataset, with `page`, `page_size`, `sort`, `order`, `search` and filters |
+| GET /api/dataset/download | Every matching dataset row as CSV |
 | [GET /api/model](http://localhost:8600/api/model) | Active predictor, input columns, limits, and metrics |
 | [GET /docs](http://localhost:8600/docs) | Interactive API documentation |
 
@@ -193,7 +216,7 @@ curl.exe --fail http://localhost:8600/api/health
 
 Open [http://localhost:3600](http://localhost:3600). Run `docker compose down` to stop.
 
-Compose mounts `apps/backend/ml/artifacts`, so a saved model is available inside the API container. Set `PREDICTION_MODE=model` in `.env` to use it. Website variables are embedded at build time, so run `docker compose up --build` after changing them.
+Compose mounts `apps/backend/ml/artifacts`, so the saved models are available inside the API container. Set `PREDICTION_MODE=model` in `.env` to use them. The API image includes the source CSV and the prepared Parquet files for the dataset table, so rebuild it after preparing new data. Website variables are embedded at build time, so run `docker compose up --build` after changing them.
 
 ## Run tests and build
 
@@ -220,14 +243,17 @@ Tests that need the real dataset are skipped until the Parquet files exist. Once
 | "A road route is needed" | The routing server is busy or unreachable. Select **Try again**, or set `NEXT_PUBLIC_ROUTING_URL` to your own OSRM server. |
 | "This pin is too far from a road" | Move the pin onto or next to a street. |
 | The map doesn't load | Check your connection. Address search still works if the map tiles are unavailable. |
-| Model page says the model couldn't be loaded | Read the message on the page. It names the missing file or the columns that don't match. |
+| A model shows **Couldn't load** on Technical → Evaluation | Read the message next to it. It names the missing file or the columns that don't match. |
+| Only one model appears in the model picker | `ml/artifacts/v1/models/` is missing. Rerun `ml.scripts.train_models`. |
+| The dataset table says the dataset isn't available | The API can't find the Parquet or CSV files under `ml/data/`. Run the steps in [Prepare the training data](#prepare-the-training-data). |
 | Model was trained on `distance_km` | Retrain on `road_distance_km` from `dataset_with_routes.parquet`. |
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
-| [`apps/web/`](apps/web/) | Next.js app: restaurants, delivery map, prediction, history, and route explorer |
+| [`apps/web/`](apps/web/) | Next.js app: the demo (restaurants, delivery map, prediction, history, route explorer) and the technical report |
+| [`apps/web/public/report/`](apps/web/public/report/) | Report data exported by `ml.scripts.export_report` |
 | [`apps/backend/app/`](apps/backend/app/) | FastAPI application, restaurant repository, and prediction services |
 | [`apps/backend/ml/`](apps/backend/ml/) | Dataset configuration, cleaning, road routes, notebooks, and baseline training |
 | [`apps/backend/tests/`](apps/backend/tests/) | API, ingestion, routing, and baseline tests |

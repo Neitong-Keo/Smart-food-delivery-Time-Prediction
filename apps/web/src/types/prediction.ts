@@ -23,6 +23,8 @@ export interface PredictionRequest {
   order_type: OrderType;
   is_festival: boolean;
   order_placed_at: string;
+  /** Model to predict with. The API uses its selected model when this is left out. */
+  model_id?: string;
 }
 
 export interface PredictionIssue {
@@ -35,6 +37,50 @@ export interface PredictionIssue {
 export interface PredictionResponse {
   predicted_delivery_time_minutes: number;
   model_status: ModelStatus;
+  model_id?: string;
+  model_name?: string;
+  warnings: PredictionIssue[];
+}
+
+/** Errors in minutes on one evaluation partition. */
+export interface ModelScores {
+  mae: number;
+  rmse: number;
+  r2: number;
+  mean_signed_error_minutes: number | null;
+}
+
+/** Mirrors `ModelSummary` in apps/backend/app/schemas/prediction.py. */
+export interface ModelSummary {
+  id: string;
+  name: string;
+  selected: boolean;
+  status: ModelAvailability;
+  detail: string | null;
+  validation: ModelScores | null;
+  test: ModelScores | null;
+}
+
+export interface ModelList {
+  selected_model_id: string;
+  models: ModelSummary[];
+}
+
+/** One model's prediction for an order, or why it has none. */
+export interface ModelPrediction {
+  model_id: string;
+  model_name: string;
+  selected: boolean;
+  predicted_delivery_time_minutes: number | null;
+  detail: string | null;
+  test_mae: number | null;
+}
+
+/** Mirrors `PredictionComparisonResponse`: every model's prediction for the same order. */
+export interface PredictionComparison {
+  model_status: ModelStatus;
+  selected_model_id: string;
+  predictions: ModelPrediction[];
   warnings: PredictionIssue[];
 }
 
@@ -74,6 +120,8 @@ export interface PredictionHistoryEntry {
   mapsDurationMinutes: number | null;
   predictedMinutes: number;
   modelStatus: ModelStatus;
+  /** The model chosen on the predict page, when one was chosen. */
+  modelName?: string;
   outsideTrainingRange?: boolean;
 }
 

@@ -1,5 +1,6 @@
 """Tests for the prediction contract and its alignment with the ML workflow."""
 
+import json
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -54,7 +55,7 @@ def features_for(**changes):
     return build_delivery_features(PredictionRequest(**{**PAYLOAD, **changes}), restaurant())
 
 
-def save_pipeline(path: Path, columns: list[str] | None = None) -> Path:
+def save_pipeline(path: Path, columns: list[str] | None = None, scale: float = 1.0) -> Path:
     """Fit a throwaway pipeline on the same nullable dtypes as the training Parquet."""
     selected = columns or list(LIMITS.model_features)
     rows = {
@@ -79,9 +80,45 @@ def save_pipeline(path: Path, columns: list[str] | None = None) -> Path:
         ),
         LinearRegression(),
     )
-    pipeline.fit(frame, [15.0, 24.0, 33.0, 48.0])
+    pipeline.fit(frame, [15.0 * scale, 24.0 * scale, 33.0 * scale, 48.0 * scale])
+    path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, path)
     return path
+
+
+def save_artifacts(directory: Path, manifest: dict | None = None) -> Path:
+    """Write model.joblib, each candidate under models/, and a manifest like the trainer does."""
+    scales = {"median": 0.5, "decision_tree": 1.5, "xgboost": 1.0}
+    for model_id, scale in scales.items():
+        save_pipeline(directory / "models" / f"{model_id}.joblib", scale=scale)
+    model_path = save_pipeline(directory / "model.joblib", scale=scales["xgboost"])
+    if manifest is None:
+        manifest = {
+            "model_name": "XGBoost",
+            "selected_model_id": "xgboost",
+            "models": {
+                model_id: {
+                    "name": name,
+                    "selected": model_id == "xgboost",
+                    "validation": {"mae": 7.0 - index, "rmse": 9.0 - index, "r2": 0.1 * index},
+                    "test": {
+                        "mae": 6.5 - index,
+                        "rmse": 8.5 - index,
+                        "r2": 0.1 * index,
+                        "mean_signed_error_minutes": 0.1,
+                    },
+                }
+                for index, (model_id, name) in enumerate(
+                    [("median", "Median baseline"), ("decision_tree", "Decision Tree"), ("xgboost", "XGBoost")]
+                )
+            },
+        }
+    (directory / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    return model_path
+
+
+def model_client_for(model_path: Path) -> TestClient:
+    return TestClient(create_app(Settings(prediction_mode="model", model_path=str(model_path))))
 
 
 def test_predict_returns_labelled_demo_result() -> None:
@@ -273,6 +310,129 @@ def test_corrupt_model_file_is_reported(tmp_path: Path) -> None:
 
     assert predictor.status == "unavailable"
     assert "could not be loaded" in predictor.detail
+
+
+def test_demo_mode_lists_a_single_demo_model() -> None:
+    body = client.get("/api/models").json()
+
+    assert body["selected_model_id"] == "demo"
+    assert [(model["id"], model["selected"], model["status"]) for model in body["models"]] == [
+        ("demo", True, "demo")
+    ]
+    assert client.post("/api/predict", json=PAYLOAD).json()["model_id"] == "demo"
+
+
+def test_model_list_reports_each_saved_model_and_its_scores(tmp_path: Path) -> None:
+    model_client = model_client_for(save_artifacts(tmp_path))
+
+    body = model_client.get("/api/models").json()
+
+    assert body["selected_model_id"] == "xgboost"
+    assert [model["id"] for model in body["models"]] == ["median", "decision_tree", "xgboost"]
+    assert [model["selected"] for model in body["models"]] == [False, False, True]
+    assert {model["status"] for model in body["models"]} == {"live"}
+    assert body["models"][0]["name"] == "Median baseline"
+    assert body["models"][2]["test"]["mae"] == 4.5
+    assert body["models"][2]["test"]["mean_signed_error_minutes"] == 0.1
+    assert body["models"][1]["validation"]["rmse"] == 8.0
+
+
+def test_predict_uses_the_requested_model(tmp_path: Path) -> None:
+    model_client = model_client_for(save_artifacts(tmp_path))
+
+    default = model_client.post("/api/predict", json=PAYLOAD).json()
+    chosen = {
+        model_id: model_client.post("/api/predict", json={**PAYLOAD, "model_id": model_id}).json()
+        for model_id in ("median", "decision_tree", "xgboost")
+    }
+
+    assert default["model_id"] == "xgboost"
+    assert default["model_name"] == "XGBoost"
+    assert default["model_status"] == "live"
+    assert chosen["xgboost"]["predicted_delivery_time_minutes"] == default["predicted_delivery_time_minutes"]
+    minutes = [chosen[key]["predicted_delivery_time_minutes"] for key in ("median", "xgboost", "decision_tree")]
+    assert minutes == sorted(minutes) and len(set(minutes)) == 3
+    assert chosen["median"]["model_name"] == "Median baseline"
+
+
+@pytest.mark.parametrize("model_id", ["missing", "Bad-ID"])
+def test_predict_rejects_an_unknown_model(model_id: str) -> None:
+    response = client.post("/api/predict", json={**PAYLOAD, "model_id": model_id})
+
+    assert response.status_code == 422
+
+
+def test_compare_returns_every_model_for_one_order(tmp_path: Path) -> None:
+    model_client = model_client_for(save_artifacts(tmp_path))
+
+    response = model_client.post(
+        "/api/predict/compare", json={**PAYLOAD, "order_placed_at": "2026-11-20T03:00:00+05:30"}
+    )
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["model_status"] == "live"
+    assert body["selected_model_id"] == "xgboost"
+    assert [prediction["model_id"] for prediction in body["predictions"]] == ["median", "decision_tree", "xgboost"]
+    assert all(prediction["predicted_delivery_time_minutes"] >= 1 for prediction in body["predictions"])
+    assert [prediction["test_mae"] for prediction in body["predictions"]] == [6.5, 5.5, 4.5]
+    assert {issue["code"] for issue in body["warnings"]} == {"order_time_outside_training_hours"}
+    single = model_client.post(
+        "/api/predict", json={**PAYLOAD, "order_placed_at": "2026-11-20T03:00:00+05:30"}
+    ).json()
+    assert body["predictions"][2]["predicted_delivery_time_minutes"] == single["predicted_delivery_time_minutes"]
+
+
+def test_compare_blocks_orders_outside_the_limits() -> None:
+    response = client.post(
+        "/api/predict/compare", json={**PAYLOAD, "road_distance_km": LIMITS.blocked_max_km + 1}
+    )
+
+    assert response.status_code == 422
+    assert "too far" in response.json()["detail"]
+
+
+def test_compare_reports_a_model_that_cannot_load(tmp_path: Path) -> None:
+    model_path = save_artifacts(tmp_path)
+    (tmp_path / "models" / "decision_tree.joblib").write_bytes(b"not a model")
+    model_client = model_client_for(model_path)
+
+    models = model_client.get("/api/models").json()["models"]
+    body = model_client.post("/api/predict/compare", json=PAYLOAD).json()
+
+    assert models[1]["status"] == "unavailable"
+    assert "could not be loaded" in models[1]["detail"]
+    assert body["predictions"][1]["predicted_delivery_time_minutes"] is None
+    assert "could not be loaded" in body["predictions"][1]["detail"]
+    assert body["predictions"][2]["predicted_delivery_time_minutes"] >= 1
+
+
+def test_compare_fails_when_no_model_can_predict(tmp_path: Path) -> None:
+    model_client = model_client_for(tmp_path / "model.joblib")
+
+    response = model_client.post("/api/predict/compare", json=PAYLOAD)
+
+    assert response.status_code == 503
+    assert "not found" in response.json()["detail"]
+
+
+def test_a_deployment_with_only_model_joblib_serves_one_model(tmp_path: Path) -> None:
+    """Older artifacts have no models/ folder and record only the winner's test scores."""
+    model_path = save_pipeline(tmp_path / "model.joblib")
+    manifest = {
+        "model_name": "XGBoost",
+        "validation": {"XGBoost": {"mae": 6.16, "rmse": 7.71, "r2": 0.36}},
+        "test": {"mae": 6.04, "rmse": 7.56, "r2": 0.32, "mean_signed_error_minutes": 0.15},
+    }
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    model_client = model_client_for(model_path)
+
+    body = model_client.get("/api/models").json()
+
+    assert [(model["id"], model["selected"]) for model in body["models"]] == [("xgboost", True)]
+    assert body["models"][0]["validation"]["mae"] == 6.16
+    assert body["models"][0]["test"]["mae"] == 6.04
+    assert model_client.post("/api/predict", json=PAYLOAD).json()["model_id"] == "xgboost"
 
 
 def test_unknown_prediction_mode_fails_at_startup() -> None:

@@ -31,6 +31,11 @@ class PredictionRequest(BaseModel):
         default=None,
         description="Order time with its UTC offset. The restaurant's local clock supplies order_hour.",
     )
+    model_id: str | None = Field(
+        default=None,
+        pattern=r"^[a-z0-9_]{1,32}$",
+        description="Model to predict with, from GET /api/models. Defaults to the selected model.",
+    )
 
     @model_validator(mode="after")
     def reject_null_island(self) -> "PredictionRequest":
@@ -55,6 +60,62 @@ class PredictionResponse(BaseModel):
 
     predicted_delivery_time_minutes: int = Field(ge=1)
     model_status: ModelStatus
+    model_id: str
+    model_name: str
+    warnings: list[PredictionIssue] = Field(default_factory=list)
+
+
+class ModelScores(BaseModel):
+    """Errors in minutes on one evaluation partition."""
+
+    mae: float
+    rmse: float
+    r2: float
+    mean_signed_error_minutes: float | None = None
+
+
+class ModelSummary(BaseModel):
+    """One model the API serves and how it scored when it was trained."""
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    id: str
+    name: str
+    selected: bool
+    status: ModelAvailability
+    detail: str | None = None
+    validation: ModelScores | None = None
+    test: ModelScores | None = None
+
+
+class ModelListResponse(BaseModel):
+    """Models available for prediction, in display order."""
+
+    selected_model_id: str
+    models: list[ModelSummary]
+
+
+class ModelPrediction(BaseModel):
+    """One model's prediction for an order, or why it has none."""
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    model_id: str
+    model_name: str
+    selected: bool
+    predicted_delivery_time_minutes: int | None = Field(default=None, ge=1)
+    detail: str | None = None
+    test_mae: float | None = None
+
+
+class PredictionComparisonResponse(BaseModel):
+    """Every served model's prediction for the same order."""
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    model_status: ModelStatus
+    selected_model_id: str
+    predictions: list[ModelPrediction]
     warnings: list[PredictionIssue] = Field(default_factory=list)
 
 

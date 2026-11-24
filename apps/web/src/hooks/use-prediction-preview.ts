@@ -22,6 +22,7 @@ export function usePredictionPreview(input: PredictionInput | null) {
         input.route.distanceKm,
         input.orderType,
         input.isFestival,
+        input.orderPlacedAt ?? "now",
       ].join("|")
     : null;
 

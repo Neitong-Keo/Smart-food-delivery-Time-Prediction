@@ -59,7 +59,7 @@ def assess_delivery(features: DeliveryFeatures, limits: ServingLimits) -> list[P
                 severity="warning",
                 message=(
                     "The model learned from orders placed between 8 AM and midnight, "
-                    "so the time may be less accurate right now."
+                    "so the time may be less accurate at this hour."
                 ),
             )
         )

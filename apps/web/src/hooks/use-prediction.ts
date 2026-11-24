@@ -3,15 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getErrorMessage, isAbortError } from "@/services/api/api-client";
-import { requestPrediction } from "@/services/api/prediction.service";
-import type { PredictionRequest, PredictionResponse } from "@/types/prediction";
+import { requestComparison } from "@/services/api/prediction.service";
+import type { PredictionComparison, PredictionRequest } from "@/types/prediction";
 
 export type PredictionState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "success"; result: PredictionResponse; requestedAt: Date }
+  | { status: "success"; result: PredictionComparison; requestedAt: Date; placedAt: string }
   | { status: "error"; message: string };
 
+/** Predict one order with every model at once, so switching models needs no new request. */
 export function usePrediction() {
   const [state, setState] = useState<PredictionState>({ status: "idle" });
   const active = useRef<AbortController | null>(null);
@@ -24,9 +25,9 @@ export function usePrediction() {
     active.current = controller;
     setState({ status: "loading" });
     try {
-      const result = await requestPrediction(request, controller.signal);
+      const result = await requestComparison(request, controller.signal);
       if (controller.signal.aborted) return null;
-      setState({ status: "success", result, requestedAt: new Date() });
+      setState({ status: "success", result, requestedAt: new Date(), placedAt: request.order_placed_at });
       return result;
     } catch (error) {
       if (!isAbortError(error) && !controller.signal.aborted) {

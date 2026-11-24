@@ -1,10 +1,8 @@
-import { config } from "@/lib/config";
+import { DELIVERY_AREA_BOUNDS, config, isInDeliveryArea } from "@/lib/config";
 import { fetchJson } from "@/services/maps/fetch-json";
 import type { LatLng, PlaceSuggestion } from "@/types/location";
 
 const RESULT_LIMIT = 6;
-/** About 50 km around the restaurant, so results stay in the delivery area. */
-const SEARCH_RADIUS_DEGREES = 0.45;
 
 interface PhotonProperties {
   osm_type?: string;
@@ -41,12 +39,8 @@ export async function searchPlaces(
   near: LatLng,
   signal?: AbortSignal,
 ): Promise<PlaceSuggestion[]> {
-  const bbox = [
-    near.lng - SEARCH_RADIUS_DEGREES,
-    near.lat - SEARCH_RADIUS_DEGREES,
-    near.lng + SEARCH_RADIUS_DEGREES,
-    near.lat + SEARCH_RADIUS_DEGREES,
-  ].join(",");
+  // Photon's bbox is minLon,minLat,maxLon,maxLat, the same order as DELIVERY_AREA_BOUNDS.
+  const bbox = DELIVERY_AREA_BOUNDS.join(",");
   const params = new URLSearchParams({
     q: query,
     lat: String(near.lat),
@@ -62,7 +56,7 @@ export async function searchPlaces(
 
   return features.flatMap((feature, index) => {
     const coordinates = feature.geometry?.coordinates;
-    if (!coordinates) return [];
+    if (!coordinates || !isInDeliveryArea({ lat: coordinates[1], lng: coordinates[0] })) return [];
     const properties = feature.properties ?? {};
     return [
       {

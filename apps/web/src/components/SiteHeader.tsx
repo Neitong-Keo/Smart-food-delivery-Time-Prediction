@@ -6,10 +6,19 @@ import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/layout/BrandMark";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
+const DEMO_PATHS = ["/restaurants", "/delivery", "/predict", "/history"];
+
 const NAV_ITEMS = [
-  { href: "/restaurants", label: "Restaurants", matches: ["/restaurants", "/delivery", "/predict"] },
-  { href: "/history", label: "History", matches: ["/history"] },
-  { href: "/model", label: "Model", matches: ["/model"] },
+  {
+    href: "/restaurants",
+    label: "Demo",
+    isActive: (path: string) => path === "/" || DEMO_PATHS.some((prefix) => path.startsWith(prefix)),
+  },
+  {
+    href: "/technical",
+    label: "Technical",
+    isActive: (path: string) => path.startsWith("/technical"),
+  },
 ];
 
 export function SiteHeader() {
@@ -30,7 +39,7 @@ export function SiteHeader() {
 
           <nav className="nav-links" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => {
-              const isActive = item.matches.some((path) => pathname.startsWith(path));
+              const isActive = item.isActive(pathname);
               return (
                 <Link
                   key={item.href}
@@ -46,9 +55,6 @@ export function SiteHeader() {
 
           <div className="header-controls">
             <ThemeToggle />
-            <Link href="/restaurants" className="button button-primary header-cta">
-              Predict delivery time
-            </Link>
           </div>
         </div>
       </header>

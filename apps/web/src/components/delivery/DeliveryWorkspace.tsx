@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, LocateFixed, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect } from "react";
@@ -21,6 +21,7 @@ import { useDeliveryRoute } from "@/hooks/use-delivery-route";
 import { useMapEngine } from "@/hooks/use-map-engine";
 import { usePredictionPreview } from "@/hooks/use-prediction-preview";
 import { useRestaurant } from "@/hooks/use-restaurants";
+import { DELIVERY_AREA_NAME } from "@/lib/config";
 
 export function DeliveryWorkspace() {
   const params = useSearchParams();
@@ -37,7 +38,7 @@ export function DeliveryWorkspace() {
     warning,
     retry: retryRoute,
   } = useDeliveryRoute(restaurant, delivery.location);
-  const { pickPoint, setError } = delivery;
+  const { pickPoint, setError, reportOutside } = delivery;
   const preview = usePredictionPreview(
     restaurant && delivery.location && route && routeStatus === "ready"
       ? {
@@ -46,6 +47,7 @@ export function DeliveryWorkspace() {
           route,
           orderType: draft.orderType,
           isFestival: draft.isFestival,
+          orderPlacedAt: draft.orderPlacedAt,
         }
       : null,
   );
@@ -136,22 +138,11 @@ export function DeliveryWorkspace() {
           <PlaceSearch near={near} onSelect={delivery.pickResolved} onError={setError} />
           {engine.status === "unavailable" && <ManualLocation onPick={pickPoint} />}
 
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={delivery.locateUser}
-            disabled={delivery.isLocating}
-          >
-            {delivery.isLocating ? (
-              <Loader2 className="spin" size={16} aria-hidden />
-            ) : (
-              <LocateFixed size={16} aria-hidden />
-            )}
-            {delivery.isLocating ? "Finding your location" : "Use my current location"}
-          </button>
-
           {mapReady && !delivery.location && (
-            <p className="map-hint">Or click the map to drop a pin.</p>
+            <p className="map-hint">
+              Or click the map to drop a pin. The demo covers {DELIVERY_AREA_NAME}, where the
+              model&apos;s orders were delivered.
+            </p>
           )}
 
           {delivery.error && <Notice tone="warning">{delivery.error}</Notice>}
@@ -217,6 +208,7 @@ export function DeliveryWorkspace() {
             route={route}
             interactive
             onPick={handleMapPick}
+            onOutside={reportOutside}
           />
         </div>
       </div>

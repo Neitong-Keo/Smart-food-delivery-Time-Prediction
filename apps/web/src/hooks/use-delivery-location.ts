@@ -3,21 +3,17 @@
 import { useCallback, useRef, useState } from "react";
 
 import { useDeliveryDraft } from "@/hooks/use-delivery-draft";
+import { DELIVERY_AREA_NAME, isInDeliveryArea } from "@/lib/config";
 import { formatCoordinates } from "@/lib/format";
 import { isValidLatLng } from "@/lib/geo";
 import { reverseGeocode } from "@/services/maps/geocoding.service";
 import type { DeliveryLocation, LatLng, LocationSource } from "@/types/location";
 
-const GEOLOCATION_ERRORS: Record<number, string> = {
-  1: "Location access is blocked. Allow it in your browser, or search for your address.",
-  2: "Your location isn't available right now. Search for your address instead.",
-  3: "Finding your location took too long. Try again, or search for your address.",
-};
+export const OUTSIDE_AREA_MESSAGE = `The demo only covers ${DELIVERY_AREA_NAME}, where the model's orders were delivered. Choose a location on the map.`;
 
 export function useDeliveryLocation() {
   const { draft, setLocation } = useDeliveryDraft();
   const [isResolving, setIsResolving] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const latestPick = useRef(0);
 
@@ -26,6 +22,10 @@ export function useDeliveryLocation() {
     async (point: LatLng, source: LocationSource, knownAddress?: string) => {
       if (!isValidLatLng(point)) {
         setError("Enter a valid latitude and longitude.");
+        return;
+      }
+      if (!isInDeliveryArea(point)) {
+        setError(OUTSIDE_AREA_MESSAGE);
         return;
       }
       const pickId = ++latestPick.current;
@@ -56,6 +56,10 @@ export function useDeliveryLocation() {
 
   const pickResolved = useCallback(
     (location: DeliveryLocation) => {
+      if (!isInDeliveryArea(location)) {
+        setError(OUTSIDE_AREA_MESSAGE);
+        return;
+      }
       latestPick.current += 1;
       setIsResolving(false);
       setError(null);
@@ -64,34 +68,15 @@ export function useDeliveryLocation() {
     [setLocation],
   );
 
-  const locateUser = useCallback(() => {
-    if (!("geolocation" in navigator)) {
-      setError("This browser can't share your location. Search for your address instead.");
-      return;
-    }
-    setIsLocating(true);
-    setError(null);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setIsLocating(false);
-        void pickPoint({ lat: coords.latitude, lng: coords.longitude }, "geolocation");
-      },
-      ({ code }) => {
-        setIsLocating(false);
-        setError(GEOLOCATION_ERRORS[code] ?? GEOLOCATION_ERRORS[2]);
-      },
-      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
-    );
-  }, [pickPoint]);
+  const reportOutside = useCallback(() => setError(OUTSIDE_AREA_MESSAGE), []);
 
   return {
     location: draft.location,
     isResolving,
-    isLocating,
     error,
     setError,
     pickPoint,
     pickResolved,
-    locateUser,
+    reportOutside,
   };
 }

@@ -1,6 +1,6 @@
 import type { GeoJSONSource, StyleSpecification } from "maplibre-gl";
 
-import { config } from "@/lib/config";
+import { DELIVERY_AREA_BOUNDS, DELIVERY_MAP_MIN_ZOOM, config, isInDeliveryArea } from "@/lib/config";
 import { decodePolyline } from "@/lib/geo";
 import { fetchJson } from "@/services/maps/fetch-json";
 import type { LatLng } from "@/types/location";
@@ -93,6 +93,8 @@ interface DeliveryMapOptions {
   interactive: boolean;
   signal: AbortSignal;
   onPick: (point: LatLng, source: "map" | "drag") => void;
+  /** Called when a click or drag lands outside the delivery area and is ignored. */
+  onOutside?: () => void;
 }
 
 const PIN_ICONS = {
@@ -120,7 +122,7 @@ const routeGeometry = (path: LatLng[]): GeoJSON.Feature<GeoJSON.LineString> => (
 /** Create a map and return a small controller, keeping MapLibre objects out of React. */
 export async function createDeliveryMap(
   element: HTMLElement,
-  { center, interactive, signal, onPick }: DeliveryMapOptions,
+  { center, interactive, signal, onPick, onOutside }: DeliveryMapOptions,
 ): Promise<DeliveryMapController | null> {
   const [maplibre, style] = await Promise.all([loadEngine(), loadStyle(currentTheme())]);
   if (signal.aborted) return null;
@@ -130,6 +132,9 @@ export async function createDeliveryMap(
     style,
     center: [center.lng, center.lat],
     zoom: 13.5,
+    // Keep the view on the area the model learned from. Panning and zooming stop at its edge.
+    maxBounds: DELIVERY_AREA_BOUNDS,
+    minZoom: DELIVERY_MAP_MIN_ZOOM,
     attributionControl: { compact: true },
     dragRotate: false,
     pitchWithRotate: false,
@@ -184,11 +189,20 @@ export async function createDeliveryMap(
     map.on("click", (event) => {
       const target = event.originalEvent.target;
       if (target instanceof Element && target.closest(".map-marker")) return;
-      onPick({ lat: event.lngLat.lat, lng: event.lngLat.lng }, "map");
+      const point = { lat: event.lngLat.lat, lng: event.lngLat.lng };
+      // The view can show a sliver past the edge at low zoom. Ignore clicks there.
+      if (isInDeliveryArea(point)) onPick(point, "map");
+      else onOutside?.();
     });
     deliveryMarker.on("dragend", () => {
       const { lat, lng } = deliveryMarker.getLngLat();
-      onPick({ lat, lng }, "drag");
+      if (isInDeliveryArea({ lat, lng })) {
+        onPick({ lat, lng }, "drag");
+        return;
+      }
+      // Snap the pin back to where it was.
+      if (deliveryPoint) deliveryMarker.setLngLat([deliveryPoint.lng, deliveryPoint.lat]);
+      onOutside?.();
     });
   }
 
