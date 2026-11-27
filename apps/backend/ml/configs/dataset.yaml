@@ -11,6 +11,7 @@ paths:
   raw_csv: "data/raw/dataset.csv"
   processed_parquet: "data/processed/dataset.parquet"
   routed_parquet: "data/processed/dataset_with_routes.parquet"
+  prepared_parquet: "data/processed/dataset_prepared.parquet"
   route_cache: "data/processed/route_cache.json"
   dataset_manifest: "data/manifests/dataset.json"
   artifacts_dir: "artifacts/v1"
@@ -71,12 +72,11 @@ quality:
 serving:
   # Columns the trained model receives. road_distance_km is the actual distance
   # along the road, added to the training data by `python -m ml.scripts.enrich_routes`.
+  # See ml/notebooks/03_exploratory_analysis.ipynb for the validation comparisons.
   model_features:
-    - Type_of_order
     - Festival
     - City
     - order_hour
-    - order_day_of_week
     - road_distance_km
   # Range of the orders used to fit the exported pipeline. See the training manifest.
   training_road_distance_km: {min: 1.4858, max: 39.5105}

@@ -55,6 +55,15 @@ class BaselineResult:
     validation_mae: float
 
 
+@dataclass(frozen=True)
+class RoutedTrainingSplit:
+    """Model partitions and the route eligibility counts."""
+
+    split: ChronologicalSplit
+    missing_road_distance: int
+    outside_road_distance_limits: int
+
+
 def split_chronologically(records: pd.DataFrame) -> ChronologicalSplit:
     """Choose cut points near 70% and 85% without dividing timestamp groups."""
     if TIMESTAMP_COLUMN not in records.columns:
@@ -99,6 +108,29 @@ def split_chronologically(records: pd.DataFrame) -> ChronologicalSplit:
         test=ordered.iloc[validation_end:],
         missing_timestamps=missing,
         invalid_timestamps=invalid,
+    )
+
+
+def split_routed_orders(
+    records: pd.DataFrame, target: str, distance_limits: dict[str, float]
+) -> RoutedTrainingSplit:
+    """Use the serving distance limits and validate the model's chronological split."""
+    distances = records["road_distance_km"]
+    eligible = records.loc[distances.between(distance_limits["min"], distance_limits["max"])]
+    targets = eligible[target].to_numpy(dtype=float, na_value=np.nan)
+    if not (np.isfinite(targets) & (targets > 0)).all():
+        raise ValueError("Delivery times must be finite, positive minutes.")
+    split = split_chronologically(eligible)
+    if "ID" in eligible:
+        train_ids = set(split.train["ID"].dropna())
+        validation_ids = set(split.validation["ID"].dropna())
+        test_ids = set(split.test["ID"].dropna())
+        if (train_ids & validation_ids) or ((train_ids | validation_ids) & test_ids):
+            raise ValueError("Order IDs occur in multiple model partitions. Resolve the conflicting orders.")
+    return RoutedTrainingSplit(
+        split=split,
+        missing_road_distance=int(distances.isna().sum()),
+        outside_road_distance_limits=int(distances.notna().sum() - len(eligible)),
     )
 
 

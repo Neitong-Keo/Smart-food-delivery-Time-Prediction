@@ -304,8 +304,3 @@ def _numeric_range(values: pd.Series) -> dict[str, float | None]:
         "median": float(values.median()),
         "max": float(values.max()),
     }
-
-
-def build_preprocessor(schema_config: dict[str, Any]) -> Any:
-    """Reserve learned preprocessing for the future training pipeline."""
-    raise NotImplementedError("Fit learned feature transformations during model training.")

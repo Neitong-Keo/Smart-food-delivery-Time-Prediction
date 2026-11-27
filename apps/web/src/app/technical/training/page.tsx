@@ -22,8 +22,10 @@ const GRIDS: Record<string, string> = {
 export default function TrainingPage() {
   const tuned = modelReport.models.filter((model) => model.trials.length > 0);
   const baseline = modelReport.models.find((model) => model.id === "median");
+
   const road = eda.correlation.find((row) => row.column === "road_distance_km");
   const straight = eda.correlation.find((row) => row.column === "distance_km");
+
   const categorical = modelReport.features.filter((feature) => feature.type === "category");
   const numeric = modelReport.features.filter((feature) => feature.type === "number");
 
@@ -33,16 +35,17 @@ export default function TrainingPage() {
         <p className="tech-eyebrow">5. Features and training</p>
         <h1 className="page-heading">Features, pipeline and tuning</h1>
         <p className="tech-lede">
-          Each model gets the same six inputs and the same preprocessing. Only the final regressor changes. Settings are
-          chosen on the validation orders, never on the test orders.
+          Each model gets the same inputs and the same preprocessing. Only the final regressor
+          changes. Settings are chosen on the validation orders, never on the test orders.
         </p>
       </header>
 
       <section className="tech-section" aria-labelledby="features-title">
-        <h2 id="features-title">The six inputs</h2>
+        <h2 id="features-title">Selected inputs</h2>
         <p>
-          Every input is something the app knows the moment the customer presses predict. Importance is how much the
-          validation error grows, in minutes, when that input&apos;s values are shuffled between orders.
+          Every input is something the app knows the moment the customer presses predict. Importance
+          is how much the validation error grows, in minutes, when that input&apos;s values are
+          shuffled between orders.
         </p>
         <DataTable
           table={{
@@ -52,12 +55,21 @@ export default function TrainingPage() {
               { label: "Where the app gets it" },
               { label: `Importance (${selectedModel.name})`, numeric: true },
             ],
-            rows: modelReport.features.map((feature) => [
-              feature.label,
-              feature.type === "category" ? "Category" : "Number",
-              feature.source,
-              `+${formatFixed(Math.max(0, feature.importance[selectedModel.id] ?? 0))} min`,
-            ]),
+            rows: modelReport.features.map((feature) => {
+              const importance = Math.max(0, feature.importance[selectedModel.id] ?? 0);
+              let featureType = "Number";
+
+              if (feature.type === "category") {
+                featureType = "Category";
+              }
+
+              return [
+                feature.label,
+                featureType,
+                feature.source,
+                `+${formatFixed(importance)} min`,
+              ];
+            }),
           }}
         />
       </section>
@@ -65,16 +77,18 @@ export default function TrainingPage() {
       <section className="tech-section" aria-labelledby="road-title">
         <h2 id="road-title">Why road distance instead of a straight line</h2>
         <p>
-          The dataset only has coordinates. The first version of the model used the straight-line distance between them.
-          But a rider follows roads, and the app measures the actual route on the map, so a model trained on straight
-          lines would receive a different kind of number in the app than it learned from. Training now uses the same
-          OSRM road route the app shows, added to every order by <code>ml.scripts.enrich_routes</code>.
+          The dataset only has coordinates. The first version of the model used the straight-line
+          distance between them. But a rider follows roads, and the app measures the actual route on
+          the map, so a model trained on straight lines would receive a different kind of number in
+          the app than it learned from. Training now uses the same OSRM road route the app shows,
+          added to every order by <code>ml.scripts.enrich_routes</code>.
         </p>
         {road && straight && (
           <p>
             In this dataset both distances relate to delivery time about equally (correlation{" "}
-            {formatFixed(straight.pearson)} for the straight line and {formatFixed(road.pearson)} for the road), so the
-            switch isn&apos;t about squeezing out accuracy. It makes training and the app measure the same thing.
+            {formatFixed(straight.pearson)} for the straight line and {formatFixed(road.pearson)}{" "}
+            for the road), so the switch isn&apos;t about squeezing out accuracy. It makes training
+            and the app measure the same thing.
           </p>
         )}
       </section>
@@ -82,10 +96,15 @@ export default function TrainingPage() {
       <section className="tech-section" aria-labelledby="pipeline-title">
         <h2 id="pipeline-title">The preprocessing pipeline</h2>
         <p>
-          <code>ml/pipeline.py</code> builds one scikit-learn pipeline. It&apos;s fitted on training orders only and saved
-          whole, so the API transforms each order exactly as training did.
+          <code>ml/pipeline.py</code> builds one scikit-learn pipeline. During tuning, it learns
+          from the training orders. The refitted pipeline is saved whole so the API applies the same
+          transformations.
         </p>
-        <div className="pipeline" role="img" aria-label="Pipeline diagram: numbers are filled with the median, categories are filled with unknown and one-hot encoded, then both go to the regressor.">
+        <div
+          className="pipeline"
+          role="img"
+          aria-label="Pipeline diagram: numbers are filled with the median, categories are filled with unknown and one-hot encoded, then both go to the regressor."
+        >
           <div className="pipeline-branches">
             <div className="flow-step">
               <strong>Numbers</strong>
@@ -98,7 +117,8 @@ export default function TrainingPage() {
               <strong>Categories</strong>
               <span>{categorical.map((feature) => feature.label).join(", ")}</span>
               <span>
-                Fill gaps with <code>&quot;unknown&quot;</code>, then one-hot encode. New labels are ignored.
+                Fill gaps with <code>&quot;unknown&quot;</code>, then one-hot encode. New labels are
+                ignored.
               </span>
             </div>
           </div>
@@ -118,8 +138,9 @@ export default function TrainingPage() {
       <section className="tech-section" aria-labelledby="tuning-title">
         <h2 id="tuning-title">Hyperparameter tuning</h2>
         <p>
-          Each model is fitted once per combination in its grid and scored on the validation orders. The best combination
-          is then refitted on training and validation orders together before the final test.
+          Each model is fitted once per combination in its grid and scored on the validation orders.
+          The best combination is then refitted on training and validation orders together before
+          the final test.
           {baseline && (
             <>
               {" "}
@@ -131,13 +152,21 @@ export default function TrainingPage() {
         <div className="figure-grid">
           {tuned.map((model) => {
             const best = model.trials[0];
+            const worst = model.trials[model.trials.length - 1];
+            const validationMaeGap = worst.mae - best.mae;
+            let tag: { label: string } | undefined;
+
+            if (model.selected) {
+              tag = { label: "Selected" };
+            }
+
             return (
               <ChartFigure
                 key={model.id}
                 title={model.name}
-                tag={model.selected ? { label: "Selected" } : undefined}
+                tag={tag}
                 description={GRIDS[model.id]}
-                takeaway={`Best: ${formatParameters(best.parameters)}, validation MAE ${formatFixed(best.mae)} min. The worst setting is ${formatFixed(model.trials[model.trials.length - 1].mae - best.mae)} min worse.`}
+                takeaway={`Best: ${formatParameters(best.parameters)}, validation MAE ${formatFixed(best.mae)} min. The worst setting is ${formatFixed(validationMaeGap)} min worse.`}
                 table={{
                   columns: [
                     { label: "Settings" },
@@ -158,12 +187,21 @@ export default function TrainingPage() {
                   labelWidth="10.5rem"
                   max={Math.max(...tuned.flatMap((item) => item.trials.map((trial) => trial.mae)))}
                   series={[{ id: "mae", name: "Validation MAE", color: MODEL_COLORS[model.id] }]}
-                  rows={model.trials.map((trial, index) => ({
-                    label: formatParameters(trial.parameters),
-                    emphasis: index === 0,
-                    tag: index === 0 ? "Best" : undefined,
-                    values: { mae: trial.mae },
-                  }))}
+                  rows={model.trials.map((trial, index) => {
+                    const isBest = index === 0;
+                    let tag: string | undefined;
+
+                    if (isBest) {
+                      tag = "Best";
+                    }
+
+                    return {
+                      label: formatParameters(trial.parameters),
+                      emphasis: isBest,
+                      tag,
+                      values: { mae: trial.mae },
+                    };
+                  })}
                 />
               </ChartFigure>
             );
@@ -177,7 +215,10 @@ export default function TrainingPage() {
         takeaway="Order hour matters most, then road distance and festival. Order type and day of the week barely matter, which matches the exploratory analysis."
         legend={tuned.map((model) => ({ name: model.name, color: MODEL_COLORS[model.id] }))}
         table={{
-          columns: [{ label: "Input" }, ...tuned.map((model) => ({ label: model.name, numeric: true }))],
+          columns: [
+            { label: "Input" },
+            ...tuned.map((model) => ({ label: model.name, numeric: true })),
+          ],
           rows: modelReport.features.map((feature) => [
             feature.label,
             ...tuned.map((model) => `${formatFixed(feature.importance[model.id] ?? 0, 3)} min`),
@@ -187,7 +228,11 @@ export default function TrainingPage() {
         <BarList
           format="minutes"
           labelWidth="9rem"
-          series={tuned.map((model) => ({ id: model.id, name: model.name, color: MODEL_COLORS[model.id] }))}
+          series={tuned.map((model) => ({
+            id: model.id,
+            name: model.name,
+            color: MODEL_COLORS[model.id],
+          }))}
           rows={modelReport.features.map((feature) => ({
             label: feature.label,
             // Shuffling an unused input can lower the error by chance. Draw those as zero; the table keeps the sign.

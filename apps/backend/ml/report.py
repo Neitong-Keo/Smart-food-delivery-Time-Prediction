@@ -15,11 +15,10 @@ import pandas as pd
 
 from ml import DEFAULT_DATASET_CONFIG_PATH
 from ml.manifest import load_dataset_config, resolve_dataset_paths
-from ml.train import split_chronologically
+from ml.train import split_routed_orders
 
 SEED = 42
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-MODEL_FEATURES = ("Type_of_order", "Festival", "City", "order_hour", "order_day_of_week", "road_distance_km")
 LABELS = {
     "Type_of_order": "Order type",
     "Festival": "Festival",
@@ -46,8 +45,6 @@ LABELS = {
     "Delivery_location_latitude": "Customer latitude",
     "Delivery_location_longitude": "Customer longitude",
 }
-# Inputs the model's features are derived from, for the missing-values chart.
-MODEL_SOURCES = frozenset({*MODEL_FEATURES, "Time_Orderd", "Order_Date"})
 CATEGORY_ORDER = {
     "Type_of_order": ["snack", "meal", "drinks", "buffet"],
     "Festival": ["no", "yes"],
@@ -108,7 +105,12 @@ def _sample(frame: pd.DataFrame, size: int) -> pd.DataFrame:
     return frame if len(frame) <= size else frame.sample(size, random_state=SEED)
 
 
-def build_eda(cleaned: pd.DataFrame, routed: pd.DataFrame, dataset_report: dict, target: str) -> dict:
+def build_eda(
+    cleaned: pd.DataFrame, routed: pd.DataFrame, dataset_report: dict, target: str, features: list[str]
+) -> dict:
+    model_sources = {*features}
+    if {"order_hour", "order_day_of_week"} & model_sources:
+        model_sources.update(("Time_Orderd", "Order_Date"))
     minutes = cleaned[target].astype("float64")
     counts = minutes.round().astype(int).value_counts().sort_index()
     hourly = cleaned.dropna(subset=["order_hour"]).groupby(cleaned["order_hour"].dropna().astype(int))[target]
@@ -135,7 +137,7 @@ def build_eda(cleaned: pd.DataFrame, routed: pd.DataFrame, dataset_report: dict,
         categories.append({
             "column": column,
             "label": LABELS[column],
-            "model_input": column in MODEL_FEATURES,
+            "model_input": column in features,
             "groups": groups,
         })
 
@@ -177,7 +179,7 @@ def build_eda(cleaned: pd.DataFrame, routed: pd.DataFrame, dataset_report: dict,
             "missing_after_cleaning": int(cleaned[cleaned_name.get(column, column)].isna().sum())
             if cleaned_name.get(column, column) in cleaned
             else None,
-            "model_input": column in MODEL_SOURCES,
+            "model_input": column in model_sources,
         }
         for column in dataset_report["raw_profile"]["columns"]
         if column not in {"Restaurant_latitude", "Restaurant_longitude"}
@@ -219,7 +221,7 @@ def build_eda(cleaned: pd.DataFrame, routed: pd.DataFrame, dataset_report: dict,
             "orders": int(len(pair)),
             "pearson": _round(pair["x"].corr(pair["y"])),
             "spearman": _round(pair["x"].corr(pair["y"], method="spearman")),
-            "model_input": column in MODEL_FEATURES,
+            "model_input": column in features,
         })
     correlation.sort(key=lambda row: -abs(row["pearson"] or 0))
 
@@ -424,8 +426,7 @@ def build_outliers(cleaned: pd.DataFrame, routed: pd.DataFrame, dataset_report: 
 def build_model(routed: pd.DataFrame, manifest: dict, predictions: pd.DataFrame, config: dict) -> dict:
     serving = config["serving"]
     blocked = serving["blocked_road_distance_km"]
-    eligible = routed.loc[routed["road_distance_km"].between(blocked["min"], blocked["max"])]
-    split = split_chronologically(eligible)
+    split = split_routed_orders(routed, manifest["target"], blocked).split
     timeline: dict[str, dict[str, int]] = {}
     for name, partition in [("training", split.train), ("validation", split.validation), ("test", split.test)]:
         for day, count in partition["order_timestamp"].dt.strftime("%Y-%m-%d").value_counts().items():
@@ -576,7 +577,7 @@ def export_report(output_dir: Path, config_path: Path = DEFAULT_DATASET_CONFIG_P
         "source_file": dataset_report.get("source_file"),
     }
     reports = {
-        "eda.json": build_eda(cleaned, routed, dataset_report, target),
+        "eda.json": build_eda(cleaned, routed, dataset_report, target, manifest["features"]),
         "outliers.json": build_outliers(cleaned, routed, dataset_report, manifest, target, config),
         "model.json": build_model(routed, manifest, predictions, config),
     }

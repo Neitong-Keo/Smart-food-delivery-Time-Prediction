@@ -23,6 +23,7 @@ class DatasetPaths:
     model_manifest: Path
     routed_parquet: Path
     models_dir: Path
+    prepared_parquet: Path
 
 
 def load_dataset_config(
@@ -57,6 +58,7 @@ def resolve_dataset_paths(
         raw_csv=base_dir / paths["raw_csv"],
         processed_parquet=base_dir / paths["processed_parquet"],
         dataset_manifest=base_dir / paths["dataset_manifest"],
+        prepared_parquet=base_dir / paths.get("prepared_parquet", "data/processed/dataset_prepared.parquet"),
         artifacts_dir=base_dir / paths["artifacts_dir"],
         model_artifact=base_dir / paths["model_artifact"],
         metrics_artifact=base_dir / paths["metrics_artifact"],

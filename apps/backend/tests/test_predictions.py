@@ -27,6 +27,7 @@ from app.services.prediction.demo import DEMO_BASE_MINUTES, DEMO_MINUTES_PER_ROA
 from app.services.prediction.features import SUPPORTED_MODEL_COLUMNS
 from ml import DEFAULT_DATASET_CONFIG_PATH
 from ml.manifest import load_dataset_config, resolve_dataset_paths
+from ml.pipeline import CATEGORICAL_FEATURES
 from ml.train import split_chronologically
 
 
@@ -73,9 +74,10 @@ def save_pipeline(path: Path, columns: list[str] | None = None, scale: float = 1
         "road_distance_km": "Float64", "route_duration_minutes": "Float64",
     }
     frame = pd.DataFrame(rows)[selected].astype({column: dtypes[column] for column in selected})
+    categorical = [field for field in selected if field in CATEGORICAL_FEATURES]
     pipeline = make_pipeline(
         make_column_transformer(
-            (OneHotEncoder(handle_unknown="ignore"), ["Type_of_order", "Festival", "City"]),
+            (OneHotEncoder(handle_unknown="ignore"), categorical),
             remainder="passthrough",
         ),
         LinearRegression(),
@@ -203,7 +205,8 @@ def test_preview_returns_exact_model_input_without_predicting() -> None:
     assert body["can_predict"] is True
     assert body["model_input"]["road_distance_km"] == 3.5
     assert "distance_km" not in body["model_input"]
-    assert body["model_input"]["Type_of_order"] == "snack"
+    assert set(body["model_input"]) == set(LIMITS.model_features)
+    assert body["model_input"]["Festival"] == "yes"
 
 
 def test_preview_reports_blocked_orders() -> None:
@@ -456,13 +459,11 @@ def test_model_input_matches_the_configured_features() -> None:
     assert list(model_input) == list(LIMITS.model_features)
     assert set(LIMITS.model_features) <= SUPPORTED_MODEL_COLUMNS
     # Road distance replaces the straight-line column. Every other feature is order-time data.
-    assert set(LIMITS.model_features) - {"road_distance_km"} == set(schema["feature_allowlist"]) - {"distance_km"}
-    assert model_input["Type_of_order"] == "snack"
+    assert set(LIMITS.model_features) - {"road_distance_km"} <= set(schema["feature_allowlist"]) - {"distance_km"}
+    assert set(model_input) == {"Festival", "City", "order_hour", "road_distance_km"}
     assert model_input["Festival"] == "yes"
     assert model_input["City"] == "Metropolitan"
-    # 20 November 2026 is a Friday. The dataset uses Monday=0.
     assert model_input["order_hour"] == 19
-    assert model_input["order_day_of_week"] == 4
 
 
 def test_order_clock_uses_the_restaurant_time_zone() -> None:

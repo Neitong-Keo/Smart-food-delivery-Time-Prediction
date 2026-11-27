@@ -138,7 +138,15 @@ For a one-off run using an OSRM server that supports Table distances, add `--tab
 
 Completed routes are cached, so you can stop and rerun the command. The route file is `ml/data/processed/dataset_with_routes.parquet`. Use the fitted range reported in the training manifest for `serving.training_road_distance_km` in [`dataset.yaml`](apps/backend/ml/configs/dataset.yaml).
 
-**3. Train and evaluate the models**
+**3. Export the prepared partitions**
+
+```powershell
+.\.venv\Scripts\python.exe -m ml.scripts.prepare
+```
+
+[`dataset_prepared.parquet`](apps/backend/ml/data/processed/dataset_prepared.parquet) contains the chronological `train`, `validation`, and `test` partitions. It includes the order timestamp, the `delivery_time_minutes` target, and the model inputs in columns prefixed with `numeric__` or `categorical__`. The export fits imputation and encoding on the training partition and applies that fit to all three partitions. The [EDA notebook](apps/backend/ml/notebooks/03_exploratory_analysis.ipynb) reproduces the cleaning, explains the feature choices, and checks the export.
+
+**4. Train and evaluate the models**
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-training.txt
@@ -152,7 +160,15 @@ This tunes each model on the validation orders and selects the one with the lowe
 - `manifest.json`: the split, tuning results, and validation and test scores for every model
 - `metrics.json`, `evaluation.png` and `test_predictions.csv` (one prediction column per model)
 
-**4. Export the report data**
+Run the separate Linear Regression and Random Forest comparison against the median baseline.
+
+```powershell
+.\.venv\Scripts\python.exe -m ml.scripts.compare_regressors
+```
+
+This saves the fitted pipelines, test metrics, and evaluation charts under `ml/experiments/linear-random-forest/`.
+
+**5. Export the report data**
 
 ```powershell
 .\.venv\Scripts\python.exe -m ml.scripts.export_report

@@ -25,16 +25,14 @@ The model must train on the same measure it receives in the app. The Kaggle data
 
 | Model column | Kaggle source | In the app | Values |
 | --- | --- | --- | --- |
-| `Type_of_order` | `Type_of_order` | Order type control | `snack`, `meal`, `drinks`, `buffet` |
 | `Festival` | `Festival` | Festival checkbox | `yes`, `no` |
 | `City` | `City` | `city_type` on the restaurant | `Metropolitan`, `Urban`, `Semi-Urban` |
 | `order_hour` | `Time_Orderd` | Order time in the restaurant's time zone | 0 to 23 |
-| `order_day_of_week` | `Order_Date` | Order date in the restaurant's time zone | Monday = 0, Sunday = 6 |
 | `road_distance_km` | OSRM route between the restaurant and delivery coordinates | OSRM route between the restaurant and the customer's pin | Kilometers along the road |
 
 Training and the app use OSRM's driving profile and reject points more than 500 m from a road. The route-by-route enrichment and the app prefer an alternative without a ferry when available. The optional `--table` enrichment batches nearby trips and uses fastest-route distances without step details.
 
-`route_duration_minutes` is also added to the training file. If a pipeline is trained with that column, the API supplies it automatically.
+Order type, weekday, and estimated drive time made negligible differences in the validation comparisons. The [EDA notebook](../apps/backend/ml/notebooks/03_exploratory_analysis.ipynb) shows the feature comparisons and the four-input selection.
 
 These Kaggle columns are deliberately not model inputs:
 
@@ -46,7 +44,7 @@ These Kaggle columns are deliberately not model inputs:
 
 ### 1. Prepare the data
 
-Follow [Prepare the training data](../README.md#prepare-the-training-data). This creates `ml/data/processed/dataset_with_routes.parquet`.
+Follow [Prepare the training data](../README.md#prepare-the-training-data). Model training reads `ml/data/processed/dataset_with_routes.parquet` and fits preprocessing inside each pipeline. The prepared export `ml/data/processed/dataset_prepared.parquet` provides the encoded partitions for analysis or training outside that workflow.
 
 ### 2. Train and save a pipeline
 
@@ -77,18 +75,18 @@ The run used OSRM Table distances for the Kaggle coordinates. Of 45,584 cleaned 
 | Validation model | MAE (min) | RMSE (min) | R² |
 | --- | ---: | ---: | ---: |
 | Median baseline | 7.77 | 9.71 | -0.021 |
-| Decision Tree | 6.25 | 7.84 | 0.335 |
-| XGBoost | 6.16 | 7.71 | 0.356 |
+| Decision Tree | 6.23 | 7.81 | 0.339 |
+| XGBoost | 6.16 | 7.71 | 0.357 |
 
-XGBoost won with 300 trees, depth 5, and a learning rate of 0.03. After refitting, its test MAE was **6.04 minutes**, RMSE was **7.56 minutes**, and R² was **0.316**. Shuffling order hour on validation increased MAE the most, by 1.07 minutes. On test orders that took more than 35 minutes, the model underestimated by 9.89 minutes on average.
+XGBoost won with 150 trees, depth 3, and a learning rate of 0.1. After refitting, its test MAE was **6.02 minutes**, RMSE was **7.54 minutes**, and R² was **0.319**. Shuffling order hour on validation increased MAE the most, by 1.06 minutes. On test orders that took more than 35 minutes, the model underestimated by 9.93 minutes on average.
 
 Every model is refitted and scored on the same test orders:
 
 | Test model | MAE (min) | RMSE (min) | R² | Mean signed error (min) |
 | --- | ---: | ---: | ---: | ---: |
 | Median baseline | 7.30 | 9.17 | -0.008 | -0.81 |
-| Decision Tree | 6.11 | 7.64 | 0.301 | +0.14 |
-| XGBoost | 6.04 | 7.56 | 0.316 | +0.15 |
+| Decision Tree | 6.09 | 7.63 | 0.303 | +0.12 |
+| XGBoost | 6.02 | 7.54 | 0.319 | +0.11 |
 
 These results measure performance on the held-out Zomato orders from multiple Indian cities. See [Before presenting model results](#before-presenting-model-results) for the dataset's location limitations.
 
@@ -149,8 +147,8 @@ Add `"model_id": "decision_tree"` (or `median`, `xgboost`) to predict with a spe
   "selected_model_id": "xgboost",
   "predictions": [
     { "model_id": "median", "model_name": "Median baseline", "selected": false, "predicted_delivery_time_minutes": 25, "detail": null, "test_mae": 7.3 },
-    { "model_id": "decision_tree", "model_name": "Decision Tree", "selected": false, "predicted_delivery_time_minutes": 20, "detail": null, "test_mae": 6.11 },
-    { "model_id": "xgboost", "model_name": "XGBoost", "selected": true, "predicted_delivery_time_minutes": 21, "detail": null, "test_mae": 6.04 }
+    { "model_id": "decision_tree", "model_name": "Decision Tree", "selected": false, "predicted_delivery_time_minutes": 20, "detail": null, "test_mae": 6.09 },
+    { "model_id": "xgboost", "model_name": "XGBoost", "selected": true, "predicted_delivery_time_minutes": 21, "detail": null, "test_mae": 6.02 }
   ],
   "warnings": []
 }

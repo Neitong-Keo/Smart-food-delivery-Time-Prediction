@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -24,32 +24,33 @@ from ml import DEFAULT_DATASET_CONFIG_PATH
 from ml.evaluate import evaluate_predictions
 from ml.manifest import load_dataset_config, resolve_dataset_paths
 from ml.pipeline import build_training_pipeline
-from ml.train import TIMESTAMP_COLUMN, split_chronologically
+from ml.train import TIMESTAMP_COLUMN, split_routed_orders
 
 SEED = 42
 BASELINE_NAME = "Median baseline"
-# Stable identifiers used for saved files and by the API's model picker.
-MODEL_IDS = {BASELINE_NAME: "median", "Decision Tree": "decision_tree", "XGBoost": "xgboost"}
-
-
-def _median_regressor(random_state: int | None = None, **parameters: Any) -> DummyRegressor:
-    """Build the baseline with the same call signature as the tuned candidates."""
-    return DummyRegressor(**parameters)
 
 
 @dataclass(frozen=True)
 class Candidate:
+    model_id: str
     name: str
     estimator: Callable[..., Any]
     grid: dict[str, list[Any]]
 
 
+MEDIAN_BASELINE = Candidate("median", BASELINE_NAME, DummyRegressor, {"strategy": ["median"]})
 CANDIDATES = (
-    Candidate(BASELINE_NAME, _median_regressor, {"strategy": ["median"]}),
-    Candidate("Decision Tree", DecisionTreeRegressor, {"max_depth": [3, 5, 8], "min_samples_leaf": [20, 80]}),
+    MEDIAN_BASELINE,
     Candidate(
+        "decision_tree",
+        "Decision Tree",
+        partial(DecisionTreeRegressor, random_state=SEED),
+        {"max_depth": [3, 5, 8], "min_samples_leaf": [20, 80]},
+    ),
+    Candidate(
+        "xgboost",
         "XGBoost",
-        partial(XGBRegressor, n_jobs=2),
+        partial(XGBRegressor, n_jobs=2, random_state=SEED),
         {"max_depth": [3, 5], "learning_rate": [0.03, 0.1], "n_estimators": [150, 300]},
     ),
 )
@@ -66,11 +67,16 @@ class TrainingResult:
 
 
 def _build(candidate: Candidate, features: list[str], parameters: dict[str, Any]) -> Pipeline:
-    return build_training_pipeline(features, candidate.estimator(random_state=SEED, **parameters))
+    return build_training_pipeline(features, candidate.estimator(**parameters))
 
 
 def fit_models(
-    records: pd.DataFrame, features: list[str], target: str, distance_limits: dict[str, float]
+    records: pd.DataFrame,
+    features: list[str],
+    target: str,
+    distance_limits: dict[str, float],
+    *,
+    candidates: tuple[Candidate, ...] = CANDIDATES,
 ) -> TrainingResult:
     """Tune each candidate on validation, refit all of them, and score them on newer orders.
 
@@ -85,21 +91,17 @@ def fit_models(
     if target in features or "road_distance_km" not in features:
         raise ValueError("Use road_distance_km as a feature and keep delivery time as the target.")
 
-    distances = records["road_distance_km"]
-    eligible = records.loc[distances.between(distance_limits["min"], distance_limits["max"])]
-    targets = eligible[target].to_numpy(dtype=float, na_value=np.nan)
-    if not (np.isfinite(targets) & (targets > 0)).all():
-        raise ValueError("Delivery times must be finite, positive minutes.")
-    split = split_chronologically(eligible)
+    routed_split = split_routed_orders(records, target, distance_limits)
+    split = routed_split.split
     if len(split.validation) < 2 or len(split.test) < 2:
         raise ValueError("At least two orders are needed in each evaluation partition.")
 
     train_x, train_y = split.train[features], split.train[target]
     val_x, val_y = split.validation[features], split.validation[target]
     comparison: dict[str, dict[str, float]] = {}
-    tuning: dict[str, list[dict[str, Any]]] = {}
+    all_trials: dict[str, list[dict[str, Any]]] = {}
     tuned_on_training: dict[str, Pipeline] = {}
-    for candidate in CANDIDATES:
+    for candidate in candidates:
         trials = []
         best_mae = np.inf
         for parameters in ParameterGrid(candidate.grid):
@@ -111,10 +113,13 @@ def fit_models(
                 tuned_on_training[candidate.name] = pipeline
         trials.sort(key=lambda trial: trial["mae"])
         comparison[candidate.name] = {key: trials[0][key] for key in ("mae", "rmse", "r2")}
-        if candidate.name != BASELINE_NAME:
-            tuning[candidate.name] = trials
+        all_trials[candidate.name] = trials
 
-    selected_name = min(tuning, key=lambda name: comparison[name]["mae"])
+    tuning = {name: trials for name, trials in all_trials.items() if name != BASELINE_NAME}
+    selected = min(
+        (candidate for candidate in candidates if candidate.name != BASELINE_NAME),
+        key=lambda candidate: comparison[candidate.name]["mae"],
+    )
     importance = {
         name: _feature_importance(tuned_on_training[name], val_x, val_y, features) for name in tuning
     }
@@ -132,9 +137,9 @@ def fit_models(
         else np.nan,
         "actual_minutes": actual,
     })
-    for candidate in CANDIDATES:
-        model_id = MODEL_IDS[candidate.name]
-        parameters = (tuning.get(candidate.name) or [{"parameters": {"strategy": "median"}}])[0]["parameters"]
+    for candidate in candidates:
+        model_id = candidate.model_id
+        parameters = all_trials[candidate.name][0]["parameters"]
         pipeline = _build(candidate, features, parameters)
         pipeline.fit(final_training[features], final_training[target])
         predicted = pipeline.predict(test_x)
@@ -143,7 +148,7 @@ def fit_models(
         predictions[f"predicted_{model_id}"] = predicted
         models[model_id] = {
             "name": candidate.name,
-            "selected": candidate.name == selected_name,
+            "selected": candidate == selected,
             "parameters": parameters,
             "artifact": f"models/{model_id}.joblib",
             "validation": comparison[candidate.name],
@@ -158,7 +163,7 @@ def fit_models(
             ),
         }
 
-    selected_id = MODEL_IDS[selected_name]
+    selected_id, selected_name = selected.model_id, selected.name
     selected_predicted = predictions[f"predicted_{selected_id}"].to_numpy()
     predictions["predicted_minutes"] = selected_predicted
     predictions["error_minutes"] = selected_predicted - actual
@@ -168,8 +173,8 @@ def fit_models(
         "features": features,
         "target": target,
         "rows_in_source": len(records),
-        "rows_missing_road_distance": int(distances.isna().sum()),
-        "rows_outside_road_distance_limits": int(distances.notna().sum() - len(eligible)),
+        "rows_missing_road_distance": routed_split.missing_road_distance,
+        "rows_outside_road_distance_limits": routed_split.outside_road_distance_limits,
         "rows_without_usable_timestamp": split.missing_timestamps + split.invalid_timestamps,
         "split": json.loads(split.summary().to_json(orient="index", date_format="iso")),
         "training_road_distance_km": {
@@ -219,18 +224,35 @@ def _save_evaluation_chart(predictions: pd.DataFrame, path: Path) -> None:
     plt.close(fig)
 
 
-def run_model_training(config_path: Path = DEFAULT_DATASET_CONFIG_PATH) -> dict:
+def run_model_training(
+    config_path: Path = DEFAULT_DATASET_CONFIG_PATH,
+    *,
+    candidates: tuple[Candidate, ...] = CANDIDATES,
+    output_dir: Path | None = None,
+) -> dict:
     """Export every refitted candidate, the selected pipeline, and the training evidence."""
     config = load_dataset_config(config_path)
     paths = resolve_dataset_paths(config_path)
+    if output_dir is not None:
+        paths = replace(
+            paths,
+            artifacts_dir=output_dir,
+            model_artifact=output_dir / "model.joblib",
+            metrics_artifact=output_dir / "metrics.json",
+            model_manifest=output_dir / "manifest.json",
+            models_dir=output_dir / "models",
+        )
     data_path = paths.routed_parquet
     if not data_path.is_file():
         raise FileNotFoundError(f"Missing '{data_path}'. Run 'python -m ml.scripts.enrich_routes' first.")
 
     serving = config["serving"]
     result = fit_models(
-        pd.read_parquet(data_path), serving["model_features"], config["schema"]["target_column"],
+        pd.read_parquet(data_path),
+        serving["model_features"],
+        config["schema"]["target_column"],
         serving["blocked_road_distance_km"],
+        candidates=candidates,
     )
     report = result.report
     with data_path.open("rb") as source:
